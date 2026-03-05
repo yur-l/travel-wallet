@@ -27,9 +27,8 @@ const T = {
     recordExpense: "Record Expense", amount: "Amount", note: "What did you buy?",
     addExpense: "+ Add Expense", noEntries: "No records yet 🛍️",
     topUp: "Top Up", topUpLabel: "Top Up",
-    commonRates: "Reference Rates (vs MYR)",
-    betterRate: "✅ Better than market", worseRate: "⚠️ Worse than market",
     allRecords: "Expense Records", noWallet: "Set up your wallet to get started.",
+    avgRateLabel: "Avg rate after top-up",
   },
   zh: {
     appTitle: "货币钱包",
@@ -42,9 +41,8 @@ const T = {
     recordExpense: "记录消费", amount: "金额", note: "买了什么？",
     addExpense: "+ 添加消费", noEntries: "还没有记录 🛍️",
     topUp: "增加余额", topUpLabel: "补充余额",
-    commonRates: "参考汇率 (vs MYR)",
-    betterRate: "✅ 汇率比市场好", worseRate: "⚠️ 汇率比市场差",
     allRecords: "消费记录", noWallet: "请先设置钱包开始使用。",
+    avgRateLabel: "补充后的平均汇率",
   }
 };
 
@@ -69,13 +67,16 @@ const Modal = ({ show, onClose, title, children, th }) => {
 };
 
 export default function App() {
-  const [lang, setLang] = useState("zh");
-  const [dark, setDark] = useState(false);
+  const [lang, setLang] = useState(() => localStorage.getItem("tw_lang") || "zh");
+  const [dark, setDark] = useState(() => localStorage.getItem("tw_dark") === "true");
   const [showSetup, setShowSetup] = useState(true);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
-  const [wallet, setWallet] = useState(null);
-  const [entries, setEntries] = useState([]);
-  const [liveRates, setLiveRates] = useState({});
+  const [wallet, setWallet] = useState(() => {
+    try { const s = localStorage.getItem("tw_wallet"); return s ? JSON.parse(s) : null; } catch { return null; }
+  });
+  const [entries, setEntries] = useState(() => {
+    try { const s = localStorage.getItem("tw_entries"); return s ? JSON.parse(s) : []; } catch { return []; }
+  });
 
   const [setupMyCurr, setSetupMyCurr] = useState("MYR");
   const [setupForeignCurr, setSetupForeignCurr] = useState("THB");
@@ -85,6 +86,18 @@ export default function App() {
   const [topUpForeignAmt, setTopUpForeignAmt] = useState("");
   const [expAmt, setExpAmt] = useState("");
   const [expNote, setExpNote] = useState("");
+
+  // Persist to localStorage whenever data changes
+  useEffect(() => { localStorage.setItem("tw_lang", lang); }, [lang]);
+  useEffect(() => { localStorage.setItem("tw_dark", dark); }, [dark]);
+  useEffect(() => {
+    if (wallet) localStorage.setItem("tw_wallet", JSON.stringify(wallet));
+    else localStorage.removeItem("tw_wallet");
+  }, [wallet]);
+  useEffect(() => { localStorage.setItem("tw_entries", JSON.stringify(entries)); }, [entries]);
+
+  // Auto-collapse setup if wallet exists on load
+  useEffect(() => { if (wallet) setShowSetup(false); }, []);
 
   const t = T[lang];
   const th = {
@@ -102,14 +115,6 @@ export default function App() {
   };
   const inp = { padding:"9px 10px", borderRadius:12, border:`1px solid ${th.inputBorder}`, fontSize:14, background:th.input, color:th.text, boxSizing:"border-box", width:"100%" };
   const sel = { ...inp, background: dark ? "#333" : "#fff" };
-
-  useEffect(() => {
-    fetch("https://open.er-api.com/v6/latest/MYR")
-      .then(r => r.json()).then(d => { if (d.rates) setLiveRates(d.rates); })
-      .catch(() => fetch("https://api.frankfurter.app/latest?from=MYR")
-        .then(r => r.json()).then(d => setLiveRates({ ...d.rates, MYR: 1 }))
-        .catch(() => {}));
-  }, []);
 
   const handleSetupWallet = () => {
     const myAmt = parseFloat(setupMyAmt), foreignAmt = parseFloat(setupForeignAmt);
@@ -155,7 +160,6 @@ export default function App() {
 
   const spent = wallet ? wallet.foreignAmt - wallet.remaining : 0;
   const spentPct = wallet ? Math.min((spent / wallet.foreignAmt) * 100, 100) : 0;
-
   const topUpPreviewRate = () => {
     if (!wallet || !topUpMyAmt || !topUpForeignAmt) return null;
     const a = parseFloat(topUpMyAmt), b = parseFloat(topUpForeignAmt);
@@ -178,7 +182,7 @@ export default function App() {
 
       <div style={{ padding:"0 14px", display:"flex", flexDirection:"column", gap:12 }}>
 
-        {/* Setup card — collapsible */}
+        {/* Setup card */}
         <div style={{ background:th.card, borderRadius:19, border:`1px solid ${th.border}`, overflow:"hidden" }}>
           <button onClick={() => setShowSetup(s => !s)} style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 16px", background:"none", border:"none", cursor:"pointer" }}>
             <span style={{ fontWeight:600, fontSize:14, color:th.text }}>💼 {t.setupTitle}</span>
@@ -213,13 +217,10 @@ export default function App() {
         {wallet && <>
           {/* Wallet balance card */}
           <div style={{ borderRadius:19, padding:20, color:"#fff", position:"relative", background: dark ? "linear-gradient(135deg, #3a2000, #6b4a00, #c8963e)" : "linear-gradient(135deg, #7a4f10, #c8963e, #f0b445)" }}>
-            {/* X button top right */}
             <button onClick={() => { setWallet(null); setEntries([]); setShowSetup(true); }} style={{ position:"absolute", top:12, right:12, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.3)", borderRadius:8, width:28, height:28, color:"#fff", fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
-
             <div style={{ fontSize:12, opacity:0.85, marginBottom:2 }}>{getCurr(wallet.foreignCurr).flag} {t.currentBalance}</div>
             <div style={{ fontSize:32, fontWeight:700, marginBottom:2 }}>{wallet.foreignCurr} {fmt(wallet.remaining)}</div>
             <div style={{ fontSize:14, opacity:0.85, marginBottom:14 }}>≈ {wallet.myCurr} {fmt(wallet.remaining * wallet.rate)}</div>
-
             <div style={{ background:"rgba(255,255,255,0.25)", borderRadius:6, height:6 }}>
               <div style={{ width:`${spentPct}%`, background:"#fff", borderRadius:6, height:6, transition:"width 0.4s" }} />
             </div>
@@ -274,8 +275,6 @@ export default function App() {
             ))}
           </div>
         </>}
-
-
       </div>
 
       {/* Top Up Modal */}
@@ -288,7 +287,7 @@ export default function App() {
             <div><label style={{ fontSize:12, color:th.sub, display:"block", marginBottom:4 }}>{getCurr(wallet.foreignCurr).flag} {wallet.foreignCurr}</label>
               <input type="number" value={topUpForeignAmt} onChange={e => setTopUpForeignAmt(e.target.value)} style={inp} /></div>
           </div>
-          {topUpPreviewRate() && <div style={{ fontSize:12, color:th.accent, marginBottom:12 }}>{t.avgRate}: 1 {wallet.foreignCurr} = {wallet.myCurr} {fmt(topUpPreviewRate(),4)}</div>}
+          {topUpPreviewRate() && <div style={{ fontSize:12, color:th.accent, marginBottom:12 }}>{t.avgRateLabel}: 1 {wallet.foreignCurr} = {wallet.myCurr} {fmt(topUpPreviewRate(),4)}</div>}
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
             <button onClick={() => setShowTopUpModal(false)} style={{ padding:"11px", borderRadius:12, border:`1px solid ${th.border}`, background:"none", color:th.sub, fontSize:14, cursor:"pointer" }}>{t.cancel}</button>
             <button onClick={handleTopUp} style={{ padding:"11px", borderRadius:12, border:"none", background:"linear-gradient(135deg, #e0a84a, #c8963e, #a87830)", color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer" }}>{t.confirm}</button>
