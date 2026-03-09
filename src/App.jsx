@@ -15,35 +15,47 @@ const firebaseConfig = {
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
 
+const C = {
+  bg: '#F6F1E8', card: '#FFFFFF', text: '#1F1F1F', sub: '#6F6A62',
+  line: '#EAE2D4', gold1: '#E4C78F', gold2: '#D2A055', goldDeep: '#B88435',
+  green: '#3F7D5C', greenDark: '#2F6549', danger: '#8A4B34',
+};
+const DARK = {
+  bg: '#1a1a1a', card: '#2a2a2a', text: '#f0f0f0', sub: '#999',
+  line: '#333', gold1: '#c8963e', gold2: '#a87830', goldDeep: '#c8963e',
+  green: '#3F7D5C', greenDark: '#2F6549', danger: '#dc2626',
+};
+
 const CURRENCIES = [
-  { code: "MYR", flag: "🇲🇾", nameZh: "马币", name: "Malaysian Ringgit" },
-  { code: "THB", flag: "🇹🇭", nameZh: "泰铢", name: "Thai Baht" },
-  { code: "JPY", flag: "🇯🇵", nameZh: "日元", name: "Japanese Yen" },
-  { code: "USD", flag: "🇺🇸", nameZh: "美元", name: "US Dollar" },
-  { code: "EUR", flag: "🇪🇺", nameZh: "欧元", name: "Euro" },
-  { code: "SGD", flag: "🇸🇬", nameZh: "新元", name: "Singapore Dollar" },
-  { code: "GBP", flag: "🇬🇧", nameZh: "英镑", name: "British Pound" },
-  { code: "AUD", flag: "🇦🇺", nameZh: "澳元", name: "Australian Dollar" },
-  { code: "CNY", flag: "🇨🇳", nameZh: "人民币", name: "Chinese Yuan" },
-  { code: "KRW", flag: "🇰🇷", nameZh: "韩元", name: "Korean Won" },
-  { code: "IDR", flag: "🇮🇩", nameZh: "印尼盾", name: "Indonesian Rupiah" },
-  { code: "TWD", flag: "🇹🇼", nameZh: "台币", name: "Taiwan Dollar" },
+  { code: "MYR", flag: "🇲🇾", nameZh: "马币" },
+  { code: "THB", flag: "🇹🇭", nameZh: "泰铢" },
+  { code: "JPY", flag: "🇯🇵", nameZh: "日元" },
+  { code: "USD", flag: "🇺🇸", nameZh: "美元" },
+  { code: "EUR", flag: "🇪🇺", nameZh: "欧元" },
+  { code: "SGD", flag: "🇸🇬", nameZh: "新元" },
+  { code: "GBP", flag: "🇬🇧", nameZh: "英镑" },
+  { code: "AUD", flag: "🇦🇺", nameZh: "澳元" },
+  { code: "CNY", flag: "🇨🇳", nameZh: "人民币" },
+  { code: "KRW", flag: "🇰🇷", nameZh: "韩元" },
+  { code: "IDR", flag: "🇮🇩", nameZh: "印尼盾" },
+  { code: "TWD", flag: "🇹🇼", nameZh: "台币" },
 ];
 
 const T = {
   en: {
-    appTitle: "Currency Wallet", setupTitle: "Wallet Setup", topUpTitle: "Top Up Balance",
+    appTitle: "Currency Wallet", setupTitle: "Wallet Setup", topUpTitle: "Top Up",
     yourCurrency: "Your Currency", exchangeCurrency: "Exchange Currency",
-    myrAmt: "Amount (your currency)", foreignAmt: "Amount (foreign)",
+    myrAmt: "Your Currency Amount", foreignAmt: "Foreign Amount",
     rate: "Rate", avgRateLabel: "Avg rate after top-up",
     confirm: "Confirm", cancel: "Cancel", createWallet: "Create Wallet",
     spent: "Spent", total: "Total", currentBalance: "Current Balance",
-    recordExpense: "Record Expense", amount: "Amount", note: "What did you buy?",
-    addExpense: "+ Add", noEntries: "No records yet 🛍️",
-    topUp: "Top Up", topUpLabel: "Top Up",
-    allRecords: "Expense Records", noWallet: "Set up your wallet to get started.",
-    syncing: "Syncing...", synced: "Synced ✓", showAll: "Show all", collapse: "Collapse",
-    quickAdd: "Quick add",
+    recordExpense: "Record Expense", amount: "Amount", note: "Note",
+    addExpense: "Add Expense", noEntries: "No records yet 🛍️",
+    topUp: "Top Up", topUpLabel: "Top Up", allRecords: "Expense Records",
+    noWallet: "Set up your wallet to get started.",
+    syncing: "Syncing...", synced: "Synced ✓",
+    showAll: "Show all", collapse: "Collapse", quickAdd: "Quick add",
+    rateBuilt: "Rate built at",
   },
   zh: {
     appTitle: "货币钱包", setupTitle: "钱包设置", topUpTitle: "增加余额",
@@ -51,13 +63,14 @@ const T = {
     myrAmt: "金额（你的货币）", foreignAmt: "外币金额",
     rate: "汇率", avgRateLabel: "补充后的平均汇率",
     confirm: "确认", cancel: "取消", createWallet: "建立钱包",
-    spent: "已消费", total: "总额", currentBalance: "当前余额",
+    spent: "已消费", total: "总预算", currentBalance: "当前余额",
     recordExpense: "记录消费", amount: "金额", note: "备注",
-    addExpense: "+ 添加消费", noEntries: "还没有记录 🛍️",
-    topUp: "充值", topUpLabel: "补充余额",
-    allRecords: "消费记录", noWallet: "请先设置钱包开始使用。",
-    syncing: "同步中...", synced: "已同步 ✓", showAll: "展开全部", collapse: "收起",
-    quickAdd: "快捷金额",
+    addExpense: "添加消费", noEntries: "暂无消费记录 🛍️",
+    topUp: "充值", topUpLabel: "补充余额", allRecords: "消费记录",
+    noWallet: "请先设置钱包开始使用。",
+    syncing: "同步中...", synced: "已同步 ✓",
+    showAll: "展开全部", collapse: "收起", quickAdd: "快捷金额",
+    rateBuilt: "汇率建立",
   }
 };
 
@@ -65,16 +78,16 @@ const fmt = (n, d = 2) => Number(n).toLocaleString("en-MY", { minimumFractionDig
 const getCurr = (code) => CURRENCIES.find(c => c.code === code) || CURRENCIES[0];
 const fmtDate = (ts) => {
   const d = new Date(ts);
-  return `${d.getDate().toString().padStart(2,"0")}/${(d.getMonth()+1).toString().padStart(2,"0")}/${d.getFullYear()}`;
+  return `${d.getDate().toString().padStart(2,"0")} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]} ${d.getFullYear()}`;
 };
 
-const Modal = ({ show, onClose, title, children, th }) => {
+const Modal = ({ show, onClose, title, children, c }) => {
   if (!show) return null;
   return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:200, padding:20 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ background:th.card, borderRadius:20, padding:"24px 20px 28px", width:"100%", maxWidth:400, boxSizing:"border-box", animation:"popIn 0.22s ease" }}>
+    <div onClick={onClose} style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:200, padding:20 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background:c.card, borderRadius:24, padding:"24px 20px 28px", width:"100%", maxWidth:400, boxSizing:"border-box", animation:"popIn 0.22s ease", border:`1px solid ${c.line}` }}>
         <style>{`@keyframes popIn{from{transform:scale(0.92);opacity:0}to{transform:scale(1);opacity:1}}`}</style>
-        {title && <div style={{ fontWeight:700, fontSize:17, color:th.text, marginBottom:18 }}>{title}</div>}
+        {title && <div style={{ fontWeight:700, fontSize:17, color:c.text, marginBottom:18 }}>{title}</div>}
         {children}
       </div>
     </div>
@@ -104,43 +117,33 @@ export default function App() {
   const [quickInput, setQuickInput] = useState("");
 
   const t = T[lang];
-  const th = {
-    bg: dark ? "#1a1a1a" : "#f5f0e8",
-    card: dark ? "#2a2a2a" : "#ffffff",
-    border: dark ? "#3a3a3a" : "#e8e0d0",
-    text: dark ? "#f0f0f0" : "#1a1a1a",
-    sub: dark ? "#999" : "#888",
-    input: dark ? "#333" : "#fafafa",
-    inputBorder: dark ? "#444" : "#e0d8cc",
-    rowBorder: dark ? "#333" : "#f0ebe0",
-    accent: "#c8963e",
-    accentLight: dark ? "#3a2e1a" : "#fdf6ea",
-    green: "#2D6A4F", red: "#dc2626",
+  const c = dark ? DARK : C;
+
+  const inp = {
+    width:"100%", height:48, padding:"0 16px", borderRadius:12,
+    border:`1.5px solid ${c.line}`, fontSize:15, background: dark ? "#333" : "#FCFAF7",
+    color:c.text, boxSizing:"border-box", outline:"none",
   };
-  const inp = { padding:"11px 14px", borderRadius:12, border:`1.5px solid ${th.inputBorder}`, fontSize:15, background:th.input, color:th.text, boxSizing:"border-box", width:"100%", outline:"none" };
-  const sel = { ...inp, background: dark ? "#333" : "#fafafa" };
+  const sel = { ...inp };
 
   useEffect(() => { localStorage.setItem("tw_lang", lang); }, [lang]);
   useEffect(() => { localStorage.setItem("tw_dark", dark); }, [dark]);
 
   useEffect(() => {
     const dataRef = ref(db, "shared");
-    const unsub = onValue(dataRef, (snapshot) => {
-      const data = snapshot.val();
+    const unsub = onValue(dataRef, (snap) => {
+      const data = snap.val();
       if (data) {
         setWallet(data.wallet || null);
         setEntries(data.entries || []);
         if (!data.wallet) setShowSetup(true);
-      } else {
-        setShowSetup(true);
-      }
-      setLoaded(true);
-      setSynced(true);
+      } else { setShowSetup(true); }
+      setLoaded(true); setSynced(true);
     });
     return () => unsub();
   }, []);
 
-  const saveToFirebase = (w, e) => {
+  const save = (w, e) => {
     setSynced(false);
     set(ref(db, "shared"), { wallet: w, entries: e }).then(() => setSynced(true));
   };
@@ -151,8 +154,7 @@ export default function App() {
     const w = { totalMy: myAmt, foreignAmt, remaining: foreignAmt, rate: myAmt / foreignAmt, myCurr: setupMyCurr, foreignCurr: setupForeignCurr };
     setWallet(w); setEntries([]);
     setSetupMyAmt(""); setSetupForeignAmt("");
-    setShowSetup(false);
-    saveToFirebase(w, []);
+    setShowSetup(false); save(w, []);
   };
 
   const handleTopUp = () => {
@@ -164,19 +166,17 @@ export default function App() {
     const e = [{ id: Date.now(), type:"topup", addMy, addForeign, myCurr: wallet.myCurr, foreignCurr: wallet.foreignCurr, flag: getCurr(wallet.foreignCurr).flag, ts: Date.now() }, ...entries];
     setWallet(w); setEntries(e);
     setTopUpMyAmt(""); setTopUpForeignAmt("");
-    setShowTopUpModal(false);
-    saveToFirebase(w, e);
+    setShowTopUpModal(false); save(w, e);
   };
 
   const handleAddExpense = () => {
     const amt = parseFloat(expAmt);
     if (!amt || amt <= 0 || !wallet) return;
-    const entry = { id: Date.now(), type:"expense", foreign: amt, my: amt * wallet.rate, note: expNote || (lang === "zh" ? "消费" : "Expense"), foreignCurr: wallet.foreignCurr, myCurr: wallet.myCurr, flag: getCurr(wallet.foreignCurr).flag, ts: Date.now() };
+    const entry = { id: Date.now(), type:"expense", foreign: amt, my: amt * wallet.rate, note: expNote || (lang === "zh" ? "未命名消费" : "Expense"), foreignCurr: wallet.foreignCurr, myCurr: wallet.myCurr, flag: getCurr(wallet.foreignCurr).flag, ts: Date.now() };
     const w = { ...wallet, remaining: wallet.remaining - amt };
     const e = [entry, ...entries];
     setWallet(w); setEntries(e);
-    setExpAmt(""); setExpNote(""); setQuickAmts([]);
-    saveToFirebase(w, e);
+    setExpAmt(""); setExpNote(""); setQuickAmts([]); save(w, e);
   };
 
   const handleDeleteEntry = (id) => {
@@ -185,29 +185,23 @@ export default function App() {
     let w;
     if (entry.type === "expense") w = { ...wallet, remaining: wallet.remaining + entry.foreign };
     else {
-      const newTotalMy = wallet.totalMy - entry.addMy;
-      const newForeignAmt = wallet.foreignAmt - entry.addForeign;
-      w = { ...wallet, totalMy: newTotalMy, foreignAmt: newForeignAmt, remaining: wallet.remaining - entry.addForeign, rate: newTotalMy / newForeignAmt };
+      const nm = wallet.totalMy - entry.addMy, nf = wallet.foreignAmt - entry.addForeign;
+      w = { ...wallet, totalMy: nm, foreignAmt: nf, remaining: wallet.remaining - entry.addForeign, rate: nm / nf };
     }
     const e = entries.filter(x => x.id !== id);
-    setWallet(w); setEntries(e);
-    saveToFirebase(w, e);
+    setWallet(w); setEntries(e); save(w, e);
   };
 
-  const handleReset = () => {
-    setWallet(null); setEntries([]); setShowSetup(true);
-    saveToFirebase(null, []);
-  };
+  const handleReset = () => { setWallet(null); setEntries([]); setShowSetup(true); save(null, []); };
 
   const addQuickAmt = () => {
     const v = parseFloat(quickInput);
     if (!v || v <= 0) return;
-    setQuickAmts(prev => [...prev, v]);
-    setQuickInput("");
+    setQuickAmts(prev => [...prev, v]); setQuickInput("");
   };
 
   const spent = wallet ? wallet.foreignAmt - wallet.remaining : 0;
-  const spentPct = wallet ? Math.min((spent / wallet.foreignAmt) * 100, 100) : 0;
+  const spentPct = wallet ? Math.min(spent / wallet.foreignAmt, 1) : 0;
   const topUpPreviewRate = () => {
     const a = parseFloat(topUpMyAmt), b = parseFloat(topUpForeignAmt);
     return (wallet && a && b) ? (wallet.totalMy + a) / (wallet.foreignAmt + b) : null;
@@ -215,187 +209,218 @@ export default function App() {
   const visibleEntries = showAllEntries ? entries : entries.slice(0, 5);
 
   if (!loaded) return (
-    <div style={{ fontFamily:"'Inter',sans-serif", background:th.bg, minHeight:"100vh", maxWidth:480, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:12 }}>
-      <div style={{ fontSize:28 }}>✈️</div>
-      <div style={{ color:th.accent, fontSize:15, fontWeight:600 }}>{t.syncing}</div>
+    <div style={{ background:c.bg, minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12, fontFamily:"system-ui,sans-serif" }}>
+      <div style={{ fontSize:36 }}>✈️</div>
+      <div style={{ color:c.goldDeep, fontSize:15, fontWeight:600 }}>{t.syncing}</div>
     </div>
   );
 
   return (
-<div style={{ fontFamily:"'Inter',sans-serif", background:th.bg, minHeight:"100vh", paddingBottom:32 }}>
+    <div style={{ fontFamily:"system-ui,-apple-system,sans-serif", background:c.bg, minHeight:"100vh", color:c.text }}>
+      <div style={{ maxWidth:480, margin:"0 auto", minHeight:"100vh", display:"flex", flexDirection:"column" }}>
 
-      {/* Top bar */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 18px 10px" }}>
-        <button onClick={() => setLang(l => l === "zh" ? "en" : "zh")} style={{ background:th.accentLight, border:`1px solid ${th.accent}`, borderRadius:8, padding:"5px 12px", fontSize:12, cursor:"pointer", color:th.accent, fontWeight:700 }}>
-          {lang === "zh" ? "EN" : "中"}
-        </button>
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:1 }}>
-          <span style={{ fontWeight:700, fontSize:16, color:th.text }}>{t.appTitle}</span>
-          <span style={{ fontSize:10, color: synced ? th.green : th.accent }}>{synced ? t.synced : t.syncing}</span>
-        </div>
-        <button onClick={() => setDark(d => !d)} style={{ background:th.accentLight, border:`1px solid ${th.accent}`, borderRadius:8, padding:"5px 10px", fontSize:14, cursor:"pointer" }}>
-          {dark ? "☀️" : "🌙"}
-        </button>
-      </div>
-
-      <div style={{ padding:"0 16px", display:"flex", flexDirection:"column", gap:12 }}>
-
-        {/* Wallet card */}
-        {wallet && (
-          <div style={{ borderRadius:20, padding:"20px 20px 16px", color:"#fff", position:"relative", background: dark ? "linear-gradient(135deg, #3a2000, #6b4a00, #c8963e)" : "linear-gradient(135deg, #7a4f10, #c8963e, #f0b445)", boxShadow:"0 4px 20px rgba(200,150,62,0.3)" }}>
-            <button onClick={handleReset} style={{ position:"absolute", top:12, right:12, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:8, width:28, height:28, color:"#fff", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
-            <div style={{ fontSize:12, opacity:0.85, marginBottom:4 }}>{getCurr(wallet.foreignCurr).flag} {t.currentBalance}</div>
-            <div style={{ fontSize:36, fontWeight:800, marginBottom:2, letterSpacing:-1 }}>{wallet.foreignCurr} {fmt(wallet.remaining)}</div>
-            <div style={{ fontSize:14, opacity:0.8, marginBottom:16 }}>≈ {wallet.myCurr} {fmt(wallet.remaining * wallet.rate)}</div>
-            <div style={{ background:"rgba(255,255,255,0.2)", borderRadius:99, height:5 }}>
-              <div style={{ width:`${spentPct}%`, background:"#fff", borderRadius:99, height:5, transition:"width 0.4s" }} />
-            </div>
-            <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, opacity:0.75, marginTop:6, marginBottom:12 }}>
-              <span>{t.spent} {wallet.foreignCurr} {fmt(spent)}</span>
-              <span>{t.total} {wallet.foreignCurr} {fmt(wallet.foreignAmt)}</span>
-            </div>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", paddingTop:12, borderTop:"1px solid rgba(255,255,255,0.2)" }}>
-              <span style={{ fontSize:12, opacity:0.8 }}>汇率建立 1 {wallet.foreignCurr} = {wallet.myCurr} {fmt(wallet.rate,4)}</span>
-              <button onClick={() => setShowTopUpModal(true)} style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.3)", borderRadius:20, padding:"5px 14px", color:"#fff", fontSize:12, cursor:"pointer", fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
-                ＋ {t.topUp} ›
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Record expense */}
-        {wallet && (
-          <div style={{ background:th.card, borderRadius:20, padding:18, border:`1px solid ${th.border}` }}>
-            <div style={{ fontWeight:700, fontSize:15, marginBottom:16, color:th.text }}>✏️ {t.recordExpense}</div>
-
-            {/* Amount */}
-            <div style={{ marginBottom:12 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
-                <label style={{ fontSize:12, color:th.sub, fontWeight:500 }}>{t.amount}</label>
-                <span style={{ fontSize:12, color:th.sub }}>{wallet.foreignCurr}</span>
-              </div>
-              <input type="number" value={expAmt} onChange={e => setExpAmt(e.target.value)} style={{ ...inp, fontSize:18, fontWeight:600 }} placeholder="0" />
-              {expAmt && parseFloat(expAmt) > 0 && (
-                <div style={{ fontSize:12, color:th.green, marginTop:6, fontWeight:500 }}>≈ {wallet.myCurr} {fmt(parseFloat(expAmt)*wallet.rate)}</div>
-              )}
-            </div>
-
-            {/* Quick amounts */}
-            <div style={{ marginBottom:12 }}>
-              <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
-                {quickAmts.map((q, i) => (
-                  <button key={i} onClick={() => setExpAmt(String(q))} style={{ background:th.accentLight, border:`1px solid ${th.accent}`, borderRadius:20, padding:"4px 12px", fontSize:13, color:th.accent, cursor:"pointer", fontWeight:600, display:"flex", alignItems:"center", gap:4 }}>
-                    +{q}
-                    <span onClick={e => { e.stopPropagation(); setQuickAmts(prev => prev.filter((_,j)=>j!==i)); }} style={{ color:th.sub, fontSize:11, marginLeft:2 }}>✕</span>
-                  </button>
-                ))}
-              </div>
-              <div style={{ display:"flex", gap:8 }}>
-                <input type="number" value={quickInput} onChange={e => setQuickInput(e.target.value)} onKeyDown={e => e.key === "Enter" && addQuickAmt()} placeholder={t.quickAdd} style={{ ...inp, fontSize:13, padding:"8px 12px", flex:1 }} />
-                <button onClick={addQuickAmt} style={{ background:th.accentLight, border:`1px solid ${th.accent}`, borderRadius:12, padding:"8px 14px", color:th.accent, fontWeight:700, cursor:"pointer", fontSize:13, whiteSpace:"nowrap" }}>＋</button>
-              </div>
-            </div>
-
-            {/* Note */}
-            <div style={{ marginBottom:14 }}>
-              <label style={{ fontSize:12, color:th.sub, fontWeight:500, display:"block", marginBottom:6 }}>{t.note}</label>
-              <input placeholder={lang === "zh" ? "买了什么？" : "What did you buy?"} value={expNote} onChange={e => setExpNote(e.target.value)} style={inp} />
-            </div>
-
-            <button onClick={handleAddExpense} style={{ width:"100%", padding:"13px", background:"#2D6A4F", color:"#fff", border:"none", borderRadius:14, fontSize:15, fontWeight:700, cursor:"pointer", letterSpacing:0.3 }}>
-              {t.addExpense}
-            </button>
-          </div>
-        )}
-
-        {/* Expense records - collapsible */}
-        {wallet && (
-          <div style={{ background:th.card, borderRadius:20, border:`1px solid ${th.border}`, overflow:"hidden" }}>
-            <button onClick={() => setShowAllEntries(s => !s)} style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"16px 18px", background:"none", border:"none", cursor:"pointer" }}>
-              <span style={{ fontWeight:700, fontSize:15, color:th.text }}>🗂 {t.allRecords}</span>
-              <span style={{ color:th.accent, fontSize:13 }}>{showAllEntries ? "▲" : "▼"}</span>
-            </button>
-            <div style={{ padding:"0 18px 16px" }}>
-              {entries.length === 0 && <div style={{ textAlign:"center", color:th.sub, padding:"20px 0", fontSize:13 }}>{t.noEntries}</div>}
-              {visibleEntries.map((e, i) => (
-                <div key={e.id} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 0", borderBottom: i < visibleEntries.length-1 ? `1px solid ${th.rowBorder}` : "none" }}>
-                  <div style={{ width:36, height:36, borderRadius:"50%", background: e.type==="topup" ? "#dcfce7" : th.accentLight, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, flexShrink:0 }}>
-                    {e.type==="topup" ? "＋" : "💸"}
-                  </div>
-                  <div style={{ flex:1, minWidth:0 }}>
-                    <div style={{ fontSize:13, fontWeight:600, color:th.text, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                      {e.type==="topup" ? `${t.topUpLabel}: ${e.myCurr} ${fmt(e.addMy)}` : e.note}
-                    </div>
-                    <div style={{ fontSize:11, color:th.sub, marginTop:1 }}>
-                      {fmtDate(e.ts)}{e.type==="expense" && <span style={{ marginLeft:6 }}>≈ {e.myCurr} {fmt(e.my)}</span>}
-                    </div>
-                  </div>
-                  <div style={{ fontWeight:700, fontSize:14, color: e.type==="topup" ? "#16a34a" : th.red, whiteSpace:"nowrap" }}>
-                    {e.type==="topup" ? "+" : "-"}{e.flag} {fmt(e.type==="topup" ? e.addForeign : e.foreign)}
-                  </div>
-                  <button onClick={() => handleDeleteEntry(e.id)} style={{ background:"none", border:"none", cursor:"pointer", color:th.sub, fontSize:14, padding:4, flexShrink:0 }}>✕</button>
-                </div>
-              ))}
-              {entries.length > 5 && (
-                <button onClick={() => setShowAllEntries(s => !s)} style={{ width:"100%", marginTop:10, padding:"8px", background:th.accentLight, border:`1px solid ${th.border}`, borderRadius:10, color:th.accent, fontSize:13, fontWeight:600, cursor:"pointer" }}>
-                  {showAllEntries ? t.collapse : `${t.showAll} (${entries.length})`}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Wallet setup - collapsible, at bottom */}
-        <div style={{ background:th.card, borderRadius:20, border:`1px solid ${th.border}`, overflow:"hidden" }}>
-          <button onClick={() => setShowSetup(s => !s)} style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"16px 18px", background:"none", border:"none", cursor:"pointer" }}>
-            <span style={{ fontWeight:700, fontSize:15, color:th.text }}>💼 {t.setupTitle}</span>
-            <span style={{ color:th.accent, fontSize:13 }}>{showSetup ? "▲" : "▼"}</span>
+        {/* Header */}
+        <header style={{ padding:"20px 24px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, background:c.bg, zIndex:10 }}>
+          <button onClick={() => setLang(l => l === "zh" ? "en" : "zh")} style={{ padding:"8px 14px", background:"none", border:`1px solid ${c.line}`, borderRadius:12, fontSize:13, cursor:"pointer", color:c.goldDeep, fontWeight:700 }}>
+            {lang === "zh" ? "EN" : "中"}
           </button>
-          {showSetup && (
-            <div style={{ padding:"0 18px 18px" }}>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
-                <div><label style={{ fontSize:12, color:th.sub, display:"block", marginBottom:6 }}>{t.yourCurrency}</label>
-                  <select value={setupMyCurr} onChange={e => setSetupMyCurr(e.target.value)} style={sel}>{CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}</select></div>
-                <div><label style={{ fontSize:12, color:th.sub, display:"block", marginBottom:6 }}>{t.exchangeCurrency}</label>
-                  <select value={setupForeignCurr} onChange={e => setSetupForeignCurr(e.target.value)} style={sel}>{CURRENCIES.filter(c => c.code !== setupMyCurr).map(c => <option key={c.code} value={c.code}>{c.flag} {c.code}</option>)}</select></div>
+          <div style={{ textAlign:"center" }}>
+            <div style={{ fontSize:18, fontWeight:800, letterSpacing:-0.5, color:c.text }}>{t.appTitle}</div>
+            <div style={{ fontSize:10, color: synced ? c.green : c.goldDeep, fontWeight:600 }}>{synced ? t.synced : t.syncing}</div>
+          </div>
+          <button onClick={() => setDark(d => !d)} style={{ padding:"8px 10px", background:"none", border:`1px solid ${c.line}`, borderRadius:12, fontSize:16, cursor:"pointer" }}>
+            {dark ? "☀️" : "🌙"}
+          </button>
+        </header>
+
+        <main style={{ flex:1, padding:"0 20px 32px", display:"flex", flexDirection:"column", gap:20 }}>
+
+          {/* Wallet Balance Card */}
+          {wallet && (
+            <div style={{ borderRadius:28, padding:"24px 24px 20px", color:"#fff", position:"relative", overflow:"hidden", background:`linear-gradient(135deg, ${c.gold2}, ${c.goldDeep})`, boxShadow:"0 10px 30px -5px rgba(184,132,53,0.4)" }}>
+              {/* Reset btn */}
+              <button onClick={handleReset} style={{ position:"absolute", top:14, right:14, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:10, width:30, height:30, color:"#fff", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
+
+              {/* Deco */}
+              <div style={{ position:"absolute", right:-16, bottom:-16, opacity:0.08, fontSize:120, lineHeight:1 }}>🪙</div>
+
+              <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, opacity:0.9 }}>
+                <span style={{ fontSize:18 }}>{getCurr(wallet.foreignCurr).flag}</span>
+                <span style={{ fontSize:12, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>{t.currentBalance}</span>
               </div>
-              <div style={{ marginBottom:12 }}>
-                <label style={{ fontSize:12, color:th.sub, display:"block", marginBottom:6 }}>{getCurr(setupMyCurr).flag} {t.myrAmt}</label>
-                <input type="number" value={setupMyAmt} onChange={e => setSetupMyAmt(e.target.value)} style={inp} />
+
+              <div style={{ marginBottom:4 }}>
+                <span style={{ fontSize:13, fontWeight:600, opacity:0.8, marginRight:6 }}>{wallet.foreignCurr}</span>
+                <span style={{ fontSize:38, fontWeight:900, letterSpacing:-1 }}>{fmt(wallet.remaining)}</span>
               </div>
-              <div style={{ marginBottom:12 }}>
-                <label style={{ fontSize:12, color:th.sub, display:"block", marginBottom:6 }}>{getCurr(setupForeignCurr).flag} {t.foreignAmt}</label>
-                <input type="number" value={setupForeignAmt} onChange={e => setSetupForeignAmt(e.target.value)} style={inp} />
+              <div style={{ fontSize:16, opacity:0.8, marginBottom:20 }}>≈ {wallet.myCurr} {fmt(wallet.remaining * wallet.rate)}</div>
+
+              {/* Progress */}
+              <div style={{ marginBottom:16 }}>
+                <div style={{ height:6, background:"rgba(255,255,255,0.2)", borderRadius:99, overflow:"hidden", marginBottom:8 }}>
+                  <div style={{ height:"100%", width:`${spentPct*100}%`, background:"#fff", borderRadius:99, transition:"width 0.6s ease" }} />
+                </div>
+                <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, opacity:0.8, fontWeight:700 }}>
+                  <div><div style={{ opacity:0.7, fontSize:10, textTransform:"uppercase", letterSpacing:0.5 }}>{t.spent}</div><div>{fmt(spent)} {wallet.foreignCurr}</div></div>
+                  <div style={{ textAlign:"right" }}><div style={{ opacity:0.7, fontSize:10, textTransform:"uppercase", letterSpacing:0.5 }}>{t.total}</div><div>{fmt(wallet.foreignAmt)} {wallet.foreignCurr}</div></div>
+                </div>
               </div>
-              {setupMyAmt && setupForeignAmt && parseFloat(setupForeignAmt) > 0 && (
-                <div style={{ fontSize:12, color:th.accent, marginBottom:12, fontWeight:500 }}>{t.rate}: 1 {setupForeignCurr} = {setupMyCurr} {fmt(parseFloat(setupMyAmt)/parseFloat(setupForeignAmt),4)}</div>
-              )}
-              <button onClick={handleSetupWallet} style={{ width:"100%", padding:"13px", borderRadius:14, border:"none", background:"linear-gradient(135deg, #e0a84a, #c8963e, #a87830)", color:"#fff", fontSize:15, fontWeight:700, cursor:"pointer", boxShadow:"0 2px 10px rgba(200,150,62,0.35)" }}>
-                {t.createWallet}
+
+              <div style={{ paddingTop:14, borderTop:"1px solid rgba(255,255,255,0.2)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <div>
+                  <div style={{ fontSize:10, opacity:0.65, fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, marginBottom:2 }}>{t.rateBuilt}</div>
+                  <div style={{ fontSize:13, fontWeight:700 }}>1 {wallet.foreignCurr} = {wallet.myCurr} {fmt(wallet.rate, 4)}</div>
+                </div>
+                <button onClick={() => setShowTopUpModal(true)} style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.3)", borderRadius:20, padding:"7px 16px", color:"#fff", fontSize:13, cursor:"pointer", fontWeight:700, backdropFilter:"blur(4px)" }}>
+                  ＋ {t.topUp} ›
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Record Expense */}
+          {wallet && (
+            <div style={{ background:c.card, borderRadius:28, padding:"20px 20px 20px", border:`1px solid ${dark ? c.line : "#EFE7DB"}`, boxShadow: dark ? "none" : "0 2px 12px rgba(0,0,0,0.04)" }}>
+              <div style={{ fontWeight:800, fontSize:17, marginBottom:18, color:c.text, display:"flex", alignItems:"center", gap:8 }}>
+                🧾 {t.recordExpense}
+              </div>
+
+              {/* Amount */}
+              <div style={{ marginBottom:14 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                  <label style={{ fontSize:11, fontWeight:700, color:c.sub, textTransform:"uppercase", letterSpacing:0.5 }}>{t.amount}</label>
+                  <span style={{ fontSize:11, fontWeight:700, color:c.goldDeep }}>{wallet.foreignCurr}</span>
+                </div>
+                <input type="number" step="0.01" value={expAmt} onChange={e => setExpAmt(e.target.value)} placeholder="0.00" style={{ ...inp, fontSize:20, fontWeight:700 }} />
+                {expAmt && parseFloat(expAmt) > 0 && (
+                  <div style={{ fontSize:12, color:c.green, marginTop:6, fontWeight:600 }}>≈ {wallet.myCurr} {fmt(parseFloat(expAmt)*wallet.rate)}</div>
+                )}
+              </div>
+
+              {/* Note */}
+              <div style={{ marginBottom:14 }}>
+                <label style={{ fontSize:11, fontWeight:700, color:c.sub, textTransform:"uppercase", letterSpacing:0.5, display:"block", marginBottom:6 }}>{t.note}</label>
+                <input type="text" value={expNote} onChange={e => setExpNote(e.target.value)} placeholder={lang === "zh" ? "例如：买芒果糯米饭" : "e.g. Mango sticky rice"} style={inp} />
+              </div>
+
+              {/* Quick amounts */}
+              <div style={{ marginBottom:16 }}>
+                <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
+                  {quickAmts.map((q, i) => (
+                    <button key={i} onClick={() => setExpAmt(prev => String((parseFloat(prev)||0)+q))} style={{ padding:"5px 14px", borderRadius:99, background: dark ? "#3a2e1a" : "#F7F1E8", border:`1px solid ${c.line}`, color:c.goldDeep, fontWeight:700, fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:4 }}>
+                      +{q}
+                      <span onClick={e => { e.stopPropagation(); setQuickAmts(p => p.filter((_,j)=>j!==i)); }} style={{ color:c.sub, fontSize:11 }}>✕</span>
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display:"flex", gap:8 }}>
+                  <input type="number" value={quickInput} onChange={e => setQuickInput(e.target.value)} onKeyDown={e => e.key==="Enter" && addQuickAmt()} placeholder={t.quickAdd} style={{ ...inp, flex:1, fontSize:13, height:40 }} />
+                  <button onClick={addQuickAmt} style={{ height:40, padding:"0 16px", background: dark ? "#3a2e1a" : "#F7F1E8", border:`1px solid ${c.line}`, borderRadius:12, color:c.goldDeep, fontWeight:800, fontSize:16, cursor:"pointer" }}>＋</button>
+                </div>
+              </div>
+
+              <button onClick={handleAddExpense} style={{ width:"100%", padding:"14px", background:`linear-gradient(135deg, ${c.green}, ${c.greenDark})`, color:"#fff", border:"none", borderRadius:18, fontSize:15, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, boxShadow:"0 4px 14px rgba(63,125,92,0.3)", letterSpacing:0.3 }}>
+                ＋ {t.addExpense}
               </button>
             </div>
           )}
-        </div>
 
-        {!wallet && <div style={{ textAlign:"center", color:th.sub, fontSize:13 }}>{t.noWallet}</div>}
+          {/* Expense Records */}
+          {wallet && (
+            <div style={{ background:c.card, borderRadius:28, border:`1px solid ${dark ? c.line : "#EFE7DB"}`, overflow:"hidden", boxShadow: dark ? "none" : "0 2px 12px rgba(0,0,0,0.04)" }}>
+              <button onClick={() => setShowAllEntries(s => !s)} style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"18px 20px", background:"none", border:"none", cursor:"pointer" }}>
+                <span style={{ fontWeight:800, fontSize:17, color:c.text, display:"flex", alignItems:"center", gap:8 }}>🗂 {t.allRecords}</span>
+                <span style={{ color:c.goldDeep, fontSize:18 }}>{showAllEntries ? "▲" : "▼"}</span>
+              </button>
+              <div style={{ padding:"0 20px 16px" }}>
+                {entries.length === 0 && <div style={{ textAlign:"center", color:c.sub, padding:"24px 0", fontSize:13, fontStyle:"italic" }}>{t.noEntries}</div>}
+                {visibleEntries.map((e, i) => (
+                  <div key={e.id} style={{ display:"flex", alignItems:"center", gap:14, padding:"14px 0", borderBottom: i < visibleEntries.length-1 ? `1px solid ${c.line}` : "none" }}>
+                    <div style={{ width:44, height:44, borderRadius:16, background: e.type==="topup" ? "#dcfce7" : (dark ? "#3a2e1a" : "#F8F1E7"), display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>
+                      {e.type==="topup" ? "＋" : "🧾"}
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:14, fontWeight:700, color:c.text, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                        {e.type==="topup" ? `${t.topUpLabel}: ${e.myCurr} ${fmt(e.addMy)}` : e.note}
+                      </div>
+                      <div style={{ fontSize:11, color:c.sub, marginTop:2 }}>
+                        {fmtDate(e.ts)}{e.type==="expense" && <span> • ≈ {e.myCurr} {fmt(e.my)}</span>}
+                      </div>
+                    </div>
+                    <div style={{ textAlign:"right", flexShrink:0 }}>
+                      <div style={{ fontWeight:800, fontSize:14, color: e.type==="topup" ? c.green : c.danger }}>
+                        {e.type==="topup" ? "+" : "-"}{fmt(e.type==="topup" ? e.addForeign : e.foreign)}
+                      </div>
+                      <div style={{ fontSize:10, fontWeight:700, color:c.sub, textTransform:"uppercase" }}>{e.foreignCurr}</div>
+                    </div>
+                    <button onClick={() => handleDeleteEntry(e.id)} style={{ background:"none", border:"none", cursor:"pointer", color:c.sub, fontSize:14, padding:4, flexShrink:0 }}>✕</button>
+                  </div>
+                ))}
+                {entries.length > 5 && (
+                  <button onClick={() => setShowAllEntries(s => !s)} style={{ width:"100%", marginTop:10, padding:"10px", background: dark ? "#3a2e1a" : "#F7F1E8", border:`1px solid ${c.line}`, borderRadius:12, color:c.goldDeep, fontSize:13, fontWeight:700, cursor:"pointer" }}>
+                    {showAllEntries ? t.collapse : `${t.showAll} (${entries.length})`}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Wallet Setup */}
+          <div style={{ background:c.card, borderRadius:28, border:`1px solid ${dark ? c.line : "#EFE7DB"}`, overflow:"hidden", boxShadow: dark ? "none" : "0 2px 12px rgba(0,0,0,0.04)" }}>
+            <button onClick={() => setShowSetup(s => !s)} style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"18px 20px", background:"none", border:"none", cursor:"pointer" }}>
+              <span style={{ fontWeight:800, fontSize:17, color:c.text, display:"flex", alignItems:"center", gap:8 }}>👜 {t.setupTitle}</span>
+              <span style={{ color:c.goldDeep, fontSize:18 }}>{showSetup ? "▲" : "▼"}</span>
+            </button>
+            {showSetup && (
+              <div style={{ padding:"0 20px 20px", display:"flex", flexDirection:"column", gap:14 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <div>
+                    <label style={{ fontSize:11, fontWeight:700, color:c.sub, textTransform:"uppercase", letterSpacing:0.5, display:"block", marginBottom:6 }}>{t.yourCurrency}</label>
+                    <select value={setupMyCurr} onChange={e => setSetupMyCurr(e.target.value)} style={sel}>{CURRENCIES.map(cu => <option key={cu.code} value={cu.code}>{cu.flag} {cu.code}</option>)}</select>
+                  </div>
+                  <div>
+                    <label style={{ fontSize:11, fontWeight:700, color:c.sub, textTransform:"uppercase", letterSpacing:0.5, display:"block", marginBottom:6 }}>{t.exchangeCurrency}</label>
+                    <select value={setupForeignCurr} onChange={e => setSetupForeignCurr(e.target.value)} style={sel}>{CURRENCIES.filter(cu => cu.code !== setupMyCurr).map(cu => <option key={cu.code} value={cu.code}>{cu.flag} {cu.code}</option>)}</select>
+                  </div>
+                </div>
+                <div>
+                  <label style={{ fontSize:11, fontWeight:700, color:c.sub, textTransform:"uppercase", letterSpacing:0.5, display:"block", marginBottom:6 }}>{getCurr(setupMyCurr).flag} {t.myrAmt}</label>
+                  <input type="number" value={setupMyAmt} onChange={e => setSetupMyAmt(e.target.value)} style={inp} />
+                </div>
+                <div>
+                  <label style={{ fontSize:11, fontWeight:700, color:c.sub, textTransform:"uppercase", letterSpacing:0.5, display:"block", marginBottom:6 }}>{getCurr(setupForeignCurr).flag} {t.foreignAmt}</label>
+                  <input type="number" value={setupForeignAmt} onChange={e => setSetupForeignAmt(e.target.value)} style={inp} />
+                </div>
+                {setupMyAmt && setupForeignAmt && parseFloat(setupForeignAmt) > 0 && (
+                  <div style={{ fontSize:12, color:c.goldDeep, fontWeight:600 }}>{t.rate}: 1 {setupForeignCurr} = {setupMyCurr} {fmt(parseFloat(setupMyAmt)/parseFloat(setupForeignAmt),4)}</div>
+                )}
+                <button onClick={handleSetupWallet} style={{ width:"100%", padding:"14px", borderRadius:18, border:"none", background:`linear-gradient(135deg, ${C.gold1}, ${C.gold2}, ${C.goldDeep})`, color:"#fff", fontSize:15, fontWeight:800, cursor:"pointer", boxShadow:"0 4px 14px rgba(200,150,62,0.35)", letterSpacing:0.3 }}>
+                  {t.createWallet}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {!wallet && <div style={{ textAlign:"center", color:c.sub, fontSize:13 }}>{t.noWallet}</div>}
+        </main>
       </div>
 
       {/* Top Up Modal */}
-      <Modal show={showTopUpModal} onClose={() => setShowTopUpModal(false)} title={t.topUpTitle} th={th}>
+      <Modal show={showTopUpModal} onClose={() => setShowTopUpModal(false)} title={t.topUpTitle} c={c}>
         {wallet && <>
-          <div style={{ fontSize:12, color:th.sub, marginBottom:14 }}>{lang==="zh" ? "当前汇率" : "Current rate"}: 1 {wallet.foreignCurr} = {wallet.myCurr} {fmt(wallet.rate,4)}</div>
+          <div style={{ fontSize:12, color:c.sub, marginBottom:16 }}>{lang==="zh" ? "当前汇率" : "Current rate"}: 1 {wallet.foreignCurr} = {wallet.myCurr} {fmt(wallet.rate,4)}</div>
           <div style={{ marginBottom:12 }}>
-            <label style={{ fontSize:12, color:th.sub, display:"block", marginBottom:6 }}>{getCurr(wallet.myCurr).flag} {wallet.myCurr}</label>
+            <label style={{ fontSize:11, fontWeight:700, color:c.sub, textTransform:"uppercase", display:"block", marginBottom:6 }}>{getCurr(wallet.myCurr).flag} {wallet.myCurr}</label>
             <input type="number" value={topUpMyAmt} onChange={e => setTopUpMyAmt(e.target.value)} style={inp} />
           </div>
           <div style={{ marginBottom:12 }}>
-            <label style={{ fontSize:12, color:th.sub, display:"block", marginBottom:6 }}>{getCurr(wallet.foreignCurr).flag} {wallet.foreignCurr}</label>
+            <label style={{ fontSize:11, fontWeight:700, color:c.sub, textTransform:"uppercase", display:"block", marginBottom:6 }}>{getCurr(wallet.foreignCurr).flag} {wallet.foreignCurr}</label>
             <input type="number" value={topUpForeignAmt} onChange={e => setTopUpForeignAmt(e.target.value)} style={inp} />
           </div>
-          {topUpPreviewRate() && <div style={{ fontSize:12, color:th.accent, marginBottom:14, fontWeight:500 }}>{t.avgRateLabel}: 1 {wallet.foreignCurr} = {wallet.myCurr} {fmt(topUpPreviewRate(),4)}</div>}
+          {topUpPreviewRate() && <div style={{ fontSize:12, color:c.goldDeep, marginBottom:16, fontWeight:600 }}>{t.avgRateLabel}: 1 {wallet.foreignCurr} = {wallet.myCurr} {fmt(topUpPreviewRate(),4)}</div>}
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-            <button onClick={() => setShowTopUpModal(false)} style={{ padding:"12px", borderRadius:12, border:`1px solid ${th.border}`, background:"none", color:th.sub, fontSize:14, cursor:"pointer" }}>{t.cancel}</button>
-            <button onClick={handleTopUp} style={{ padding:"12px", borderRadius:12, border:"none", background:"linear-gradient(135deg, #e0a84a, #c8963e, #a87830)", color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer" }}>{t.confirm}</button>
+            <button onClick={() => setShowTopUpModal(false)} style={{ padding:"12px", borderRadius:14, border:`1px solid ${c.line}`, background:"none", color:c.sub, fontSize:14, cursor:"pointer", fontWeight:600 }}>{t.cancel}</button>
+            <button onClick={handleTopUp} style={{ padding:"12px", borderRadius:14, border:"none", background:`linear-gradient(135deg, ${C.gold1}, ${C.goldDeep})`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer" }}>{t.confirm}</button>
           </div>
         </>}
       </Modal>
