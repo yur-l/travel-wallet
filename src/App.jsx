@@ -222,7 +222,7 @@ export default function App() {
   );
 
   return (
-    <div style={{ fontFamily:"'Inter',sans-serif", background:th.bg, minHeight:"100vh", maxWidth:480, margin:"0 auto", paddingBottom:32 }}>
+<div style={{ fontFamily:"'Inter',sans-serif", background:th.bg, minHeight:"100vh", paddingBottom:32 }}>
 
       {/* Top bar */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 18px 10px" }}>
