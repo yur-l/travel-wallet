@@ -1,4 +1,19 @@
 import { useState, useEffect } from "react";
+import { initializeApp } from "firebase/app";
+import { getDatabase, ref, set, onValue } from "firebase/database";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDKZmUarqWqNEfI8fnh2bvQ4LhQnhD0jOc",
+  authDomain: "travel-wallet-27f51.firebaseapp.com",
+  databaseURL: "https://travel-wallet-27f51-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "travel-wallet-27f51",
+  storageBucket: "travel-wallet-27f51.firebasestorage.app",
+  messagingSenderId: "641467425230",
+  appId: "1:641467425230:web:eff53c8d41ce62358c4b9f"
+};
+
+const firebaseApp = initializeApp(firebaseConfig);
+const db = getDatabase(firebaseApp);
 
 const CURRENCIES = [
   { code: "MYR", name: "Malaysian Ringgit", nameZh: "马币", flag: "🇲🇾" },
@@ -21,28 +36,28 @@ const T = {
     setupTitle: "Wallet Setup", topUpTitle: "Top Up Balance",
     yourCurrency: "Your Currency", exchangeCurrency: "Exchange Currency",
     myrAmt: "Amount (your currency)", foreignAmt: "Amount (foreign)",
-    rate: "Rate", avgRate: "Avg rate after top-up",
+    rate: "Rate", avgRateLabel: "Avg rate after top-up",
     confirm: "Confirm", cancel: "Cancel", createWallet: "Create Wallet",
     spent: "Spent", total: "Total", currentBalance: "Current Balance",
     recordExpense: "Record Expense", amount: "Amount", note: "What did you buy?",
     addExpense: "+ Add Expense", noEntries: "No records yet 🛍️",
     topUp: "Top Up", topUpLabel: "Top Up",
     allRecords: "Expense Records", noWallet: "Set up your wallet to get started.",
-    avgRateLabel: "Avg rate after top-up",
+    syncing: "Syncing...", synced: "Synced ✓",
   },
   zh: {
     appTitle: "货币钱包",
     setupTitle: "设置钱包", topUpTitle: "增加余额",
     yourCurrency: "你的货币", exchangeCurrency: "兑换货币",
     myrAmt: "金额（你的货币）", foreignAmt: "外币金额",
-    rate: "汇率", avgRate: "补充后的平均汇率",
+    rate: "汇率", avgRateLabel: "补充后的平均汇率",
     confirm: "确认", cancel: "取消", createWallet: "建立钱包",
     spent: "已花费", total: "共", currentBalance: "现有余额",
     recordExpense: "记录消费", amount: "金额", note: "买了什么？",
     addExpense: "+ 添加消费", noEntries: "还没有记录 🛍️",
     topUp: "增加余额", topUpLabel: "补充余额",
     allRecords: "消费记录", noWallet: "请先设置钱包开始使用。",
-    avgRateLabel: "补充后的平均汇率",
+    syncing: "同步中...", synced: "已同步 ✓",
   }
 };
 
@@ -71,12 +86,10 @@ export default function App() {
   const [dark, setDark] = useState(() => localStorage.getItem("tw_dark") === "true");
   const [showSetup, setShowSetup] = useState(true);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
-  const [wallet, setWallet] = useState(() => {
-    try { const s = localStorage.getItem("tw_wallet"); return s ? JSON.parse(s) : null; } catch { return null; }
-  });
-  const [entries, setEntries] = useState(() => {
-    try { const s = localStorage.getItem("tw_entries"); return s ? JSON.parse(s) : []; } catch { return []; }
-  });
+  const [wallet, setWallet] = useState(null);
+  const [entries, setEntries] = useState([]);
+  const [synced, setSynced] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
   const [setupMyCurr, setSetupMyCurr] = useState("MYR");
   const [setupForeignCurr, setSetupForeignCurr] = useState("THB");
@@ -86,18 +99,6 @@ export default function App() {
   const [topUpForeignAmt, setTopUpForeignAmt] = useState("");
   const [expAmt, setExpAmt] = useState("");
   const [expNote, setExpNote] = useState("");
-
-  // Persist to localStorage whenever data changes
-  useEffect(() => { localStorage.setItem("tw_lang", lang); }, [lang]);
-  useEffect(() => { localStorage.setItem("tw_dark", dark); }, [dark]);
-  useEffect(() => {
-    if (wallet) localStorage.setItem("tw_wallet", JSON.stringify(wallet));
-    else localStorage.removeItem("tw_wallet");
-  }, [wallet]);
-  useEffect(() => { localStorage.setItem("tw_entries", JSON.stringify(entries)); }, [entries]);
-
-  // Auto-collapse setup if wallet exists on load
-  useEffect(() => { if (wallet) setShowSetup(false); }, []);
 
   const t = T[lang];
   const th = {
@@ -116,46 +117,94 @@ export default function App() {
   const inp = { padding:"9px 10px", borderRadius:12, border:`1px solid ${th.inputBorder}`, fontSize:14, background:th.input, color:th.text, boxSizing:"border-box", width:"100%" };
   const sel = { ...inp, background: dark ? "#333" : "#fff" };
 
+  // Save lang & dark locally
+  useEffect(() => { localStorage.setItem("tw_lang", lang); }, [lang]);
+  useEffect(() => { localStorage.setItem("tw_dark", dark); }, [dark]);
+
+  // Listen to Firebase realtime data
+  useEffect(() => {
+    const dataRef = ref(db, "shared");
+    const unsub = onValue(dataRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        setWallet(data.wallet || null);
+        setEntries(data.entries || []);
+        if (data.wallet) setShowSetup(false);
+      }
+      setLoaded(true);
+      setSynced(true);
+    });
+    return () => unsub();
+  }, []);
+
+  // Save to Firebase
+  const saveToFirebase = (newWallet, newEntries) => {
+    setSynced(false);
+    set(ref(db, "shared"), { wallet: newWallet, entries: newEntries })
+      .then(() => setSynced(true));
+  };
+
   const handleSetupWallet = () => {
     const myAmt = parseFloat(setupMyAmt), foreignAmt = parseFloat(setupForeignAmt);
     if (!myAmt || !foreignAmt || myAmt <= 0 || foreignAmt <= 0) return;
-    setWallet({ totalMy: myAmt, foreignAmt, remaining: foreignAmt, rate: myAmt / foreignAmt, myCurr: setupMyCurr, foreignCurr: setupForeignCurr });
+    const newWallet = { totalMy: myAmt, foreignAmt, remaining: foreignAmt, rate: myAmt / foreignAmt, myCurr: setupMyCurr, foreignCurr: setupForeignCurr };
+    setWallet(newWallet);
     setEntries([]);
     setSetupMyAmt(""); setSetupForeignAmt("");
     setShowSetup(false);
+    saveToFirebase(newWallet, []);
   };
 
   const handleTopUp = () => {
     const addMy = parseFloat(topUpMyAmt), addForeign = parseFloat(topUpForeignAmt);
     if (!addMy || !addForeign || addMy <= 0 || addForeign <= 0) return;
-    setWallet(prev => {
-      const newTotalMy = prev.totalMy + addMy;
-      const newForeignAmt = prev.foreignAmt + addForeign;
-      return { ...prev, totalMy: newTotalMy, foreignAmt: newForeignAmt, remaining: prev.remaining + addForeign, rate: newTotalMy / newForeignAmt };
-    });
-    setEntries(prev => [{ id: Date.now(), type:"topup", addMy, addForeign, myCurr: wallet.myCurr, foreignCurr: wallet.foreignCurr, flag: getCurr(wallet.foreignCurr).flag, ts: Date.now() }, ...prev]);
+    const newWallet = (() => {
+      const newTotalMy = wallet.totalMy + addMy;
+      const newForeignAmt = wallet.foreignAmt + addForeign;
+      return { ...wallet, totalMy: newTotalMy, foreignAmt: newForeignAmt, remaining: wallet.remaining + addForeign, rate: newTotalMy / newForeignAmt };
+    })();
+    const newEntry = { id: Date.now(), type:"topup", addMy, addForeign, myCurr: wallet.myCurr, foreignCurr: wallet.foreignCurr, flag: getCurr(wallet.foreignCurr).flag, ts: Date.now() };
+    const newEntries = [newEntry, ...entries];
+    setWallet(newWallet);
+    setEntries(newEntries);
     setTopUpMyAmt(""); setTopUpForeignAmt("");
     setShowTopUpModal(false);
+    saveToFirebase(newWallet, newEntries);
   };
 
   const handleAddExpense = () => {
     const amt = parseFloat(expAmt);
     if (!amt || amt <= 0 || !wallet) return;
-    setEntries(prev => [{ id: Date.now(), type:"expense", foreign: amt, my: amt * wallet.rate, note: expNote || (lang === "zh" ? "消费" : "Expense"), foreignCurr: wallet.foreignCurr, myCurr: wallet.myCurr, flag: getCurr(wallet.foreignCurr).flag, ts: Date.now() }, ...prev]);
-    setWallet(prev => ({ ...prev, remaining: prev.remaining - amt }));
+    const newEntry = { id: Date.now(), type:"expense", foreign: amt, my: amt * wallet.rate, note: expNote || (lang === "zh" ? "消费" : "Expense"), foreignCurr: wallet.foreignCurr, myCurr: wallet.myCurr, flag: getCurr(wallet.foreignCurr).flag, ts: Date.now() };
+    const newEntries = [newEntry, ...entries];
+    const newWallet = { ...wallet, remaining: wallet.remaining - amt };
+    setWallet(newWallet);
+    setEntries(newEntries);
     setExpAmt(""); setExpNote("");
+    saveToFirebase(newWallet, newEntries);
   };
 
   const handleDeleteEntry = (id) => {
     const e = entries.find(x => x.id === id);
     if (!e) return;
-    if (e.type === "expense") setWallet(prev => ({ ...prev, remaining: prev.remaining + e.foreign }));
-    else setWallet(prev => {
-      const newTotalMy = prev.totalMy - e.addMy;
-      const newForeignAmt = prev.foreignAmt - e.addForeign;
-      return { ...prev, totalMy: newTotalMy, foreignAmt: newForeignAmt, remaining: prev.remaining - e.addForeign, rate: newTotalMy / newForeignAmt };
-    });
-    setEntries(prev => prev.filter(x => x.id !== id));
+    let newWallet;
+    if (e.type === "expense") newWallet = { ...wallet, remaining: wallet.remaining + e.foreign };
+    else {
+      const newTotalMy = wallet.totalMy - e.addMy;
+      const newForeignAmt = wallet.foreignAmt - e.addForeign;
+      newWallet = { ...wallet, totalMy: newTotalMy, foreignAmt: newForeignAmt, remaining: wallet.remaining - e.addForeign, rate: newTotalMy / newForeignAmt };
+    }
+    const newEntries = entries.filter(x => x.id !== id);
+    setWallet(newWallet);
+    setEntries(newEntries);
+    saveToFirebase(newWallet, newEntries);
+  };
+
+  const handleReset = () => {
+    setWallet(null);
+    setEntries([]);
+    setShowSetup(true);
+    saveToFirebase(null, []);
   };
 
   const spent = wallet ? wallet.foreignAmt - wallet.remaining : 0;
@@ -166,6 +215,12 @@ export default function App() {
     return (a && b) ? (wallet.totalMy + a) / (wallet.foreignAmt + b) : null;
   };
 
+  if (!loaded) return (
+    <div style={{ fontFamily:"'Inter',sans-serif", background:th.bg, minHeight:"100vh", maxWidth:480, margin:"0 auto", display:"flex", alignItems:"center", justifyContent:"center" }}>
+      <div style={{ color:th.accent, fontSize:16, fontWeight:600 }}>⏳ {t.syncing}</div>
+    </div>
+  );
+
   return (
     <div style={{ fontFamily:"'Inter',sans-serif", background:th.bg, minHeight:"100vh", maxWidth:480, margin:"0 auto", paddingBottom:28 }}>
 
@@ -174,7 +229,10 @@ export default function App() {
         <button onClick={() => setLang(l => l === "zh" ? "en" : "zh")} style={{ background:th.accentLight, border:`1px solid ${th.accent}`, borderRadius:8, padding:"5px 12px", fontSize:12, cursor:"pointer", color:th.accent, fontWeight:700 }}>
           {lang === "zh" ? "EN" : "中"}
         </button>
-        <span style={{ fontWeight:700, fontSize:16, color:th.text, letterSpacing:0.3 }}>{t.appTitle}</span>
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
+          <span style={{ fontWeight:700, fontSize:16, color:th.text }}>{t.appTitle}</span>
+          <span style={{ fontSize:10, color: synced ? th.green : th.accent }}>{synced ? t.synced : t.syncing}</span>
+        </div>
         <button onClick={() => setDark(d => !d)} style={{ background:th.accentLight, border:`1px solid ${th.accent}`, borderRadius:8, padding:"5px 10px", fontSize:14, cursor:"pointer" }}>
           {dark ? "☀️" : "🌙"}
         </button>
@@ -217,7 +275,7 @@ export default function App() {
         {wallet && <>
           {/* Wallet balance card */}
           <div style={{ borderRadius:19, padding:20, color:"#fff", position:"relative", background: dark ? "linear-gradient(135deg, #3a2000, #6b4a00, #c8963e)" : "linear-gradient(135deg, #7a4f10, #c8963e, #f0b445)" }}>
-            <button onClick={() => { setWallet(null); setEntries([]); setShowSetup(true); }} style={{ position:"absolute", top:12, right:12, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.3)", borderRadius:8, width:28, height:28, color:"#fff", fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
+            <button onClick={handleReset} style={{ position:"absolute", top:12, right:12, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.3)", borderRadius:8, width:28, height:28, color:"#fff", fontSize:14, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
             <div style={{ fontSize:12, opacity:0.85, marginBottom:2 }}>{getCurr(wallet.foreignCurr).flag} {t.currentBalance}</div>
             <div style={{ fontSize:32, fontWeight:700, marginBottom:2 }}>{wallet.foreignCurr} {fmt(wallet.remaining)}</div>
             <div style={{ fontSize:14, opacity:0.85, marginBottom:14 }}>≈ {wallet.myCurr} {fmt(wallet.remaining * wallet.rate)}</div>
