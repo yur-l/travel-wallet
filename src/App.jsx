@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set, onValue } from "firebase/database";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDKZmUarqWqNEfI8fnh2bvQ4LhQnhD0jOc",
@@ -14,6 +15,7 @@ const firebaseConfig = {
 
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
+const auth = getAuth(firebaseApp);
 
 const C = {
   bg: '#F6F1E8', card: '#FFFFFF', text: '#1F1F1F', sub: '#6F6A62',
@@ -56,6 +58,10 @@ const T = {
     syncing: "Syncing...", synced: "Synced ✓",
     showAll: "Show all", collapse: "Collapse", quickAdd: "Quick add",
     rateBuilt: "Rate built at",
+    login: "Sign In", register: "Register", email: "Email", password: "Password",
+    loginError: "Login failed. Check your email and password.",
+    registerError: "Registration failed. Try a different email.",
+    logout: "Sign Out", switchToRegister: "No account? Register", switchToLogin: "Have an account? Sign In",
   },
   zh: {
     appTitle: "货币钱包", setupTitle: "钱包设置", topUpTitle: "增加余额",
@@ -71,6 +77,10 @@ const T = {
     syncing: "同步中...", synced: "已同步 ✓",
     showAll: "展开全部", collapse: "收起", quickAdd: "快捷金额",
     rateBuilt: "汇率建立",
+    login: "登入", register: "注册", email: "电子邮件", password: "密码",
+    loginError: "登入失败，请检查你的邮件和密码。",
+    registerError: "注册失败，请尝试其他邮件。",
+    logout: "登出", switchToRegister: "没有账号？注册", switchToLogin: "已有账号？登入",
   }
 };
 
@@ -94,9 +104,71 @@ const Modal = ({ show, onClose, title, children, c }) => {
   );
 };
 
+function LoginScreen({ lang, dark }) {
+  const c = dark ? DARK : C;
+  const t = T[lang];
+  const [isRegister, setIsRegister] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const inp = {
+    width:"100%", height:48, padding:"0 16px", borderRadius:12,
+    border:`1.5px solid ${c.line}`, fontSize:15, background: dark ? "#333" : "#FCFAF7",
+    color:c.text, boxSizing:"border-box", outline:"none",
+  };
+
+  const handleSubmit = async () => {
+    setError(""); setLoading(true);
+    try {
+      if (isRegister) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+    } catch {
+      setError(isRegister ? t.registerError : t.loginError);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{ fontFamily:"system-ui,-apple-system,sans-serif", background:c.bg, minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", padding:20 }}>
+      <div style={{ width:"100%", maxWidth:380 }}>
+        <div style={{ textAlign:"center", marginBottom:36 }}>
+          <div style={{ fontSize:48, marginBottom:12 }}>✈️</div>
+          <div style={{ fontSize:22, fontWeight:900, color:c.text, letterSpacing:-0.5 }}>{t.appTitle}</div>
+        </div>
+        <div style={{ background:c.card, borderRadius:24, padding:"28px 24px", border:`1px solid ${c.line}`, boxShadow: dark ? "none" : "0 4px 24px rgba(0,0,0,0.06)" }}>
+          <div style={{ fontWeight:800, fontSize:18, color:c.text, marginBottom:24 }}>
+            {isRegister ? t.register : t.login}
+          </div>
+          <div style={{ marginBottom:14 }}>
+            <label style={{ fontSize:11, fontWeight:700, color:c.sub, textTransform:"uppercase", letterSpacing:0.5, display:"block", marginBottom:6 }}>{t.email}</label>
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)} style={inp} placeholder="you@email.com" />
+          </div>
+          <div style={{ marginBottom:20 }}>
+            <label style={{ fontSize:11, fontWeight:700, color:c.sub, textTransform:"uppercase", letterSpacing:0.5, display:"block", marginBottom:6 }}>{t.password}</label>
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleSubmit()} style={inp} placeholder="••••••••" />
+          </div>
+          {error && <div style={{ fontSize:13, color:c.danger, marginBottom:14, fontWeight:600 }}>{error}</div>}
+          <button onClick={handleSubmit} disabled={loading} style={{ width:"100%", padding:"14px", background:`linear-gradient(135deg, ${C.gold1}, ${C.gold2}, ${C.goldDeep})`, color:"#fff", border:"none", borderRadius:18, fontSize:15, fontWeight:800, cursor:"pointer", boxShadow:"0 4px 14px rgba(200,150,62,0.35)", opacity: loading ? 0.7 : 1 }}>
+            {loading ? "..." : (isRegister ? t.register : t.login)}
+          </button>
+          <button onClick={() => { setIsRegister(r => !r); setError(""); }} style={{ width:"100%", marginTop:14, padding:"10px", background:"none", border:"none", color:c.goldDeep, fontSize:13, fontWeight:700, cursor:"pointer" }}>
+            {isRegister ? t.switchToLogin : t.switchToRegister}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [lang, setLang] = useState(() => localStorage.getItem("tw_lang") || "zh");
   const [dark, setDark] = useState(() => localStorage.getItem("tw_dark") === "true");
+  const [user, setUser] = useState(undefined);
   const [showSetup, setShowSetup] = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [showAllEntries, setShowAllEntries] = useState(false);
@@ -130,6 +202,12 @@ export default function App() {
   useEffect(() => { localStorage.setItem("tw_dark", dark); }, [dark]);
 
   useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => setUser(u));
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    if (!user) { setLoaded(false); return; }
     const dataRef = ref(db, "shared");
     const unsub = onValue(dataRef, (snap) => {
       const data = snap.val();
@@ -141,7 +219,7 @@ export default function App() {
       setLoaded(true); setSynced(true);
     });
     return () => unsub();
-  }, []);
+  }, [user]);
 
   const save = (w, e) => {
     setSynced(false);
@@ -208,6 +286,15 @@ export default function App() {
   };
   const visibleEntries = showAllEntries ? entries : entries.slice(0, 5);
 
+  if (user === undefined) return (
+    <div style={{ background:c.bg, minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12, fontFamily:"system-ui,sans-serif" }}>
+      <div style={{ fontSize:36 }}>✈️</div>
+      <div style={{ color:c.goldDeep, fontSize:15, fontWeight:600 }}>{t.syncing}</div>
+    </div>
+  );
+
+  if (!user) return <LoginScreen lang={lang} dark={dark} />;
+
   if (!loaded) return (
     <div style={{ background:c.bg, minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12, fontFamily:"system-ui,sans-serif" }}>
       <div style={{ fontSize:36 }}>✈️</div>
@@ -219,7 +306,6 @@ export default function App() {
     <div style={{ fontFamily:"system-ui,-apple-system,sans-serif", background:c.bg, minHeight:"100vh", color:c.text }}>
       <div style={{ maxWidth:480, margin:"0 auto", minHeight:"100vh", display:"flex", flexDirection:"column" }}>
 
-        {/* Header */}
         <header style={{ padding:"20px 24px 16px", display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, background:c.bg, zIndex:10 }}>
           <button onClick={() => setLang(l => l === "zh" ? "en" : "zh")} style={{ padding:"8px 14px", background:"none", border:`1px solid ${c.line}`, borderRadius:12, fontSize:13, cursor:"pointer", color:c.goldDeep, fontWeight:700 }}>
             {lang === "zh" ? "EN" : "中"}
@@ -235,27 +321,19 @@ export default function App() {
 
         <main style={{ flex:1, padding:"0 20px 32px", display:"flex", flexDirection:"column", gap:20 }}>
 
-          {/* Wallet Balance Card */}
           {wallet && (
             <div style={{ borderRadius:28, padding:"24px 24px 20px", color:"#fff", position:"relative", overflow:"hidden", background:`linear-gradient(135deg, ${c.gold2}, ${c.goldDeep})`, boxShadow:"0 10px 30px -5px rgba(184,132,53,0.4)" }}>
-              {/* Reset btn */}
               <button onClick={handleReset} style={{ position:"absolute", top:14, right:14, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:10, width:30, height:30, color:"#fff", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
-
-              {/* Deco */}
               <div style={{ position:"absolute", right:-16, bottom:-16, opacity:0.08, fontSize:120, lineHeight:1 }}>🪙</div>
-
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, opacity:0.9 }}>
                 <span style={{ fontSize:18 }}>{getCurr(wallet.foreignCurr).flag}</span>
                 <span style={{ fontSize:12, fontWeight:700, letterSpacing:1, textTransform:"uppercase" }}>{t.currentBalance}</span>
               </div>
-
               <div style={{ marginBottom:4 }}>
                 <span style={{ fontSize:13, fontWeight:600, opacity:0.8, marginRight:6 }}>{wallet.foreignCurr}</span>
                 <span style={{ fontSize:38, fontWeight:900, letterSpacing:-1 }}>{fmt(wallet.remaining)}</span>
               </div>
               <div style={{ fontSize:16, opacity:0.8, marginBottom:20 }}>≈ {wallet.myCurr} {fmt(wallet.remaining * wallet.rate)}</div>
-
-              {/* Progress */}
               <div style={{ marginBottom:16 }}>
                 <div style={{ height:6, background:"rgba(255,255,255,0.2)", borderRadius:99, overflow:"hidden", marginBottom:8 }}>
                   <div style={{ height:"100%", width:`${spentPct*100}%`, background:"#fff", borderRadius:99, transition:"width 0.6s ease" }} />
@@ -265,7 +343,6 @@ export default function App() {
                   <div style={{ textAlign:"right" }}><div style={{ opacity:0.7, fontSize:10, textTransform:"uppercase", letterSpacing:0.5 }}>{t.total}</div><div>{fmt(wallet.foreignAmt)} {wallet.foreignCurr}</div></div>
                 </div>
               </div>
-
               <div style={{ paddingTop:14, borderTop:"1px solid rgba(255,255,255,0.2)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                 <div>
                   <div style={{ fontSize:10, opacity:0.65, fontWeight:700, textTransform:"uppercase", letterSpacing:0.5, marginBottom:2 }}>{t.rateBuilt}</div>
@@ -278,14 +355,9 @@ export default function App() {
             </div>
           )}
 
-          {/* Record Expense */}
           {wallet && (
             <div style={{ background:c.card, borderRadius:28, padding:"20px 20px 20px", border:`1px solid ${dark ? c.line : "#EFE7DB"}`, boxShadow: dark ? "none" : "0 2px 12px rgba(0,0,0,0.04)" }}>
-              <div style={{ fontWeight:800, fontSize:17, marginBottom:18, color:c.text, display:"flex", alignItems:"center", gap:8 }}>
-                🧾 {t.recordExpense}
-              </div>
-
-              {/* Amount */}
+              <div style={{ fontWeight:800, fontSize:17, marginBottom:18, color:c.text, display:"flex", alignItems:"center", gap:8 }}>🧾 {t.recordExpense}</div>
               <div style={{ marginBottom:14 }}>
                 <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
                   <label style={{ fontSize:11, fontWeight:700, color:c.sub, textTransform:"uppercase", letterSpacing:0.5 }}>{t.amount}</label>
@@ -296,14 +368,10 @@ export default function App() {
                   <div style={{ fontSize:12, color:c.green, marginTop:6, fontWeight:600 }}>≈ {wallet.myCurr} {fmt(parseFloat(expAmt)*wallet.rate)}</div>
                 )}
               </div>
-
-              {/* Note */}
               <div style={{ marginBottom:14 }}>
                 <label style={{ fontSize:11, fontWeight:700, color:c.sub, textTransform:"uppercase", letterSpacing:0.5, display:"block", marginBottom:6 }}>{t.note}</label>
                 <input type="text" value={expNote} onChange={e => setExpNote(e.target.value)} placeholder={lang === "zh" ? "例如：买芒果糯米饭" : "e.g. Mango sticky rice"} style={inp} />
               </div>
-
-              {/* Quick amounts */}
               <div style={{ marginBottom:16 }}>
                 <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
                   {quickAmts.map((q, i) => (
@@ -318,14 +386,12 @@ export default function App() {
                   <button onClick={addQuickAmt} style={{ height:40, padding:"0 16px", background: dark ? "#3a2e1a" : "#F7F1E8", border:`1px solid ${c.line}`, borderRadius:12, color:c.goldDeep, fontWeight:800, fontSize:16, cursor:"pointer" }}>＋</button>
                 </div>
               </div>
-
               <button onClick={handleAddExpense} style={{ width:"100%", padding:"14px", background:`linear-gradient(135deg, ${c.green}, ${c.greenDark})`, color:"#fff", border:"none", borderRadius:18, fontSize:15, fontWeight:800, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8, boxShadow:"0 4px 14px rgba(63,125,92,0.3)", letterSpacing:0.3 }}>
                 ＋ {t.addExpense}
               </button>
             </div>
           )}
 
-          {/* Expense Records */}
           {wallet && (
             <div style={{ background:c.card, borderRadius:28, border:`1px solid ${dark ? c.line : "#EFE7DB"}`, overflow:"hidden", boxShadow: dark ? "none" : "0 2px 12px rgba(0,0,0,0.04)" }}>
               <button onClick={() => setShowAllEntries(s => !s)} style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"18px 20px", background:"none", border:"none", cursor:"pointer" }}>
@@ -365,7 +431,6 @@ export default function App() {
             </div>
           )}
 
-          {/* Wallet Setup */}
           <div style={{ background:c.card, borderRadius:28, border:`1px solid ${dark ? c.line : "#EFE7DB"}`, overflow:"hidden", boxShadow: dark ? "none" : "0 2px 12px rgba(0,0,0,0.04)" }}>
             <button onClick={() => setShowSetup(s => !s)} style={{ width:"100%", display:"flex", justifyContent:"space-between", alignItems:"center", padding:"18px 20px", background:"none", border:"none", cursor:"pointer" }}>
               <span style={{ fontWeight:800, fontSize:17, color:c.text, display:"flex", alignItems:"center", gap:8 }}>👜 {t.setupTitle}</span>
@@ -402,10 +467,14 @@ export default function App() {
           </div>
 
           {!wallet && <div style={{ textAlign:"center", color:c.sub, fontSize:13 }}>{t.noWallet}</div>}
+
+          <button onClick={() => signOut(auth)} style={{ width:"100%", padding:"12px", background:"none", border:`1px solid ${c.line}`, borderRadius:14, color:c.sub, fontSize:13, fontWeight:700, cursor:"pointer" }}>
+            {t.logout}
+          </button>
+
         </main>
       </div>
 
-      {/* Top Up Modal */}
       <Modal show={showTopUpModal} onClose={() => setShowTopUpModal(false)} title={t.topUpTitle} c={c}>
         {wallet && <>
           <div style={{ fontSize:12, color:c.sub, marginBottom:16 }}>{lang==="zh" ? "当前汇率" : "Current rate"}: 1 {wallet.foreignCurr} = {wallet.myCurr} {fmt(wallet.rate,4)}</div>
