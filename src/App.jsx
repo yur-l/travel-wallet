@@ -62,6 +62,7 @@ const T = {
     loginError: "Login failed. Check your email and password.",
     registerError: "Registration failed. Try a different email.",
     logout: "Sign Out", switchToRegister: "No account? Register", switchToLogin: "Have an account? Sign In",
+    dailyTotal: "Daily total",
   },
   zh: {
     appTitle: "货币钱包", setupTitle: "钱包设置", topUpTitle: "增加余额",
@@ -81,6 +82,7 @@ const T = {
     loginError: "登入失败，请检查你的邮件和密码。",
     registerError: "注册失败，请尝试其他邮件。",
     logout: "登出", switchToRegister: "没有账号？注册", switchToLogin: "已有账号？登入",
+    dailyTotal: "当天合计",
   }
 };
 
@@ -284,7 +286,20 @@ export default function App() {
     const a = parseFloat(topUpMyAmt), b = parseFloat(topUpForeignAmt);
     return (wallet && a && b) ? (wallet.totalMy + a) / (wallet.foreignAmt + b) : null;
   };
+
   const visibleEntries = showAllEntries ? entries : entries.slice(0, 5);
+
+  // 按日期分组
+  const groupEntriesByDate = (list) => {
+    const groups = {};
+    list.forEach(e => {
+      const dateKey = fmtDate(e.ts);
+      if (!groups[dateKey]) groups[dateKey] = { dateKey, ts: e.ts, items: [] };
+      groups[dateKey].items.push(e);
+    });
+    return Object.values(groups).sort((a, b) => b.ts - a.ts);
+  };
+  const groupedEntries = groupEntriesByDate(visibleEntries);
 
   if (user === undefined) return (
     <div style={{ background:c.bg, minHeight:"100vh", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", gap:12, fontFamily:"system-ui,sans-serif" }}>
@@ -399,29 +414,59 @@ export default function App() {
                 <span style={{ color:c.goldDeep, fontSize:18 }}>{showAllEntries ? "▲" : "▼"}</span>
               </button>
               <div style={{ padding:"0 20px 16px" }}>
-                {entries.length === 0 && <div style={{ textAlign:"center", color:c.sub, padding:"24px 0", fontSize:13, fontStyle:"italic" }}>{t.noEntries}</div>}
-                {visibleEntries.map((e, i) => (
-                  <div key={e.id} style={{ display:"flex", alignItems:"center", gap:14, padding:"14px 0", borderBottom: i < visibleEntries.length-1 ? `1px solid ${c.line}` : "none" }}>
-                    <div style={{ width:44, height:44, borderRadius:16, background: e.type==="topup" ? "#dcfce7" : (dark ? "#3a2e1a" : "#F8F1E7"), display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>
-                      {e.type==="topup" ? "＋" : "🧾"}
-                    </div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:14, fontWeight:700, color:c.text, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                        {e.type==="topup" ? `${t.topUpLabel}: ${e.myCurr} ${fmt(e.addMy)}` : e.note}
+                {entries.length === 0 && (
+                  <div style={{ textAlign:"center", color:c.sub, padding:"24px 0", fontSize:13, fontStyle:"italic" }}>{t.noEntries}</div>
+                )}
+
+                {groupedEntries.map(group => {
+                  const daySpent = group.items
+                    .filter(e => e.type === "expense")
+                    .reduce((sum, e) => sum + e.foreign, 0);
+                  return (
+                    <div key={group.dateKey} style={{ marginBottom:8 }}>
+                      {/* 日期标题行 */}
+                      <div style={{
+                        display:"flex", justifyContent:"space-between", alignItems:"center",
+                        padding:"10px 0 6px",
+                        borderBottom:`1.5px solid ${c.gold1}`,
+                        marginBottom:2,
+                      }}>
+                        <span style={{ fontSize:12, fontWeight:800, color:c.goldDeep, letterSpacing:0.3 }}>
+                          📅 {group.dateKey}
+                        </span>
+                        {daySpent > 0 && (
+                          <span style={{ fontSize:12, fontWeight:800, color:c.danger }}>
+                            {t.dailyTotal}: -{fmt(daySpent)} {wallet.foreignCurr}
+                          </span>
+                        )}
                       </div>
-                      <div style={{ fontSize:11, color:c.sub, marginTop:2 }}>
-                        {fmtDate(e.ts)}{e.type==="expense" && <span> • ≈ {e.myCurr} {fmt(e.my)}</span>}
-                      </div>
+                      {/* 当天明细 */}
+                      {group.items.map((e, i) => (
+                        <div key={e.id} style={{ display:"flex", alignItems:"center", gap:14, padding:"12px 0", borderBottom: i < group.items.length - 1 ? `1px solid ${c.line}` : "none" }}>
+                          <div style={{ width:44, height:44, borderRadius:16, background: e.type==="topup" ? "#dcfce7" : (dark ? "#3a2e1a" : "#F8F1E7"), display:"flex", alignItems:"center", justifyContent:"center", fontSize:20, flexShrink:0 }}>
+                            {e.type==="topup" ? "＋" : "🧾"}
+                          </div>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontSize:14, fontWeight:700, color:c.text, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                              {e.type==="topup" ? `${t.topUpLabel}: ${e.myCurr} ${fmt(e.addMy)}` : e.note}
+                            </div>
+                            <div style={{ fontSize:11, color:c.sub, marginTop:2 }}>
+                              {e.type==="expense" && <span>≈ {e.myCurr} {fmt(e.my)}</span>}
+                            </div>
+                          </div>
+                          <div style={{ textAlign:"right", flexShrink:0 }}>
+                            <div style={{ fontWeight:800, fontSize:14, color: e.type==="topup" ? c.green : c.danger }}>
+                              {e.type==="topup" ? "+" : "-"}{fmt(e.type==="topup" ? e.addForeign : e.foreign)}
+                            </div>
+                            <div style={{ fontSize:10, fontWeight:700, color:c.sub, textTransform:"uppercase" }}>{e.foreignCurr}</div>
+                          </div>
+                          <button onClick={() => handleDeleteEntry(e.id)} style={{ background:"none", border:"none", cursor:"pointer", color:c.sub, fontSize:14, padding:4, flexShrink:0 }}>✕</button>
+                        </div>
+                      ))}
                     </div>
-                    <div style={{ textAlign:"right", flexShrink:0 }}>
-                      <div style={{ fontWeight:800, fontSize:14, color: e.type==="topup" ? c.green : c.danger }}>
-                        {e.type==="topup" ? "+" : "-"}{fmt(e.type==="topup" ? e.addForeign : e.foreign)}
-                      </div>
-                      <div style={{ fontSize:10, fontWeight:700, color:c.sub, textTransform:"uppercase" }}>{e.foreignCurr}</div>
-                    </div>
-                    <button onClick={() => handleDeleteEntry(e.id)} style={{ background:"none", border:"none", cursor:"pointer", color:c.sub, fontSize:14, padding:4, flexShrink:0 }}>✕</button>
-                  </div>
-                ))}
+                  );
+                })}
+
                 {entries.length > 5 && (
                   <button onClick={() => setShowAllEntries(s => !s)} style={{ width:"100%", marginTop:10, padding:"10px", background: dark ? "#3a2e1a" : "#F7F1E8", border:`1px solid ${c.line}`, borderRadius:12, color:c.goldDeep, fontSize:13, fontWeight:700, cursor:"pointer" }}>
                     {showAllEntries ? t.collapse : `${t.showAll} (${entries.length})`}
