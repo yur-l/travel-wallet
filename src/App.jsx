@@ -63,6 +63,7 @@ const T = {
     registerError: "Registration failed. Try a different email.",
     logout: "Sign Out", switchToRegister: "No account? Register", switchToLogin: "Have an account? Sign In",
     dailyTotal: "Daily total",
+    confirmDeleteTitle: "Delete Record?", confirmDeleteMsg: "This record will be permanently removed.", confirmResetTitle: "Reset Wallet?", confirmResetMsg: "All records and wallet data will be cleared. This cannot be undone.", delete: "Delete", reset: "Reset",
   },
   zh: {
     appTitle: "货币钱包", setupTitle: "钱包设置", topUpTitle: "增加余额",
@@ -83,6 +84,7 @@ const T = {
     registerError: "注册失败，请尝试其他邮件。",
     logout: "登出", switchToRegister: "没有账号？注册", switchToLogin: "已有账号？登入",
     dailyTotal: "当天合计",
+    confirmDeleteTitle: "删除记录？", confirmDeleteMsg: "此记录将被永久删除。", confirmResetTitle: "重制钱包？", confirmResetMsg: "所有记录和钱包数据将被清除，此操作无法撤销。", delete: "删除", reset: "重制",
   }
 };
 
@@ -189,6 +191,8 @@ export default function App() {
   const [expNote, setExpNote] = useState("");
   const [quickAmts, setQuickAmts] = useState([]);
   const [quickInput, setQuickInput] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const t = T[lang];
   const c = dark ? DARK : C;
@@ -338,7 +342,7 @@ export default function App() {
 
           {wallet && (
             <div style={{ borderRadius:28, padding:"24px 24px 20px", color:"#fff", position:"relative", overflow:"hidden", background:`linear-gradient(135deg, ${c.gold2}, ${c.goldDeep})`, boxShadow:"0 10px 30px -5px rgba(184,132,53,0.4)" }}>
-              <button onClick={handleReset} style={{ position:"absolute", top:14, right:14, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:10, width:30, height:30, color:"#fff", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
+              <button onClick={() => setShowResetConfirm(true)} style={{ position:"absolute", top:14, right:14, background:"rgba(255,255,255,0.15)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:10, width:30, height:30, color:"#fff", fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>✕</button>
               <div style={{ position:"absolute", right:-16, bottom:-16, opacity:0.08, fontSize:120, lineHeight:1 }}>🪙</div>
               <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12, opacity:0.9 }}>
                 <span style={{ fontSize:18 }}>{getCurr(wallet.foreignCurr).flag}</span>
@@ -460,7 +464,7 @@ export default function App() {
                             </div>
                             <div style={{ fontSize:10, fontWeight:700, color:c.sub, textTransform:"uppercase" }}>{e.foreignCurr}</div>
                           </div>
-                          <button onClick={() => handleDeleteEntry(e.id)} style={{ background:"none", border:"none", cursor:"pointer", color:c.sub, fontSize:14, padding:4, flexShrink:0 }}>✕</button>
+                          <button onClick={() => setConfirmDeleteId(e.id)} style={{ background:"none", border:"none", cursor:"pointer", color:c.sub, fontSize:14, padding:4, flexShrink:0 }}>✕</button>
                         </div>
                       ))}
                     </div>
@@ -537,6 +541,24 @@ export default function App() {
             <button onClick={handleTopUp} style={{ padding:"12px", borderRadius:14, border:"none", background:`linear-gradient(135deg, ${C.gold1}, ${C.goldDeep})`, color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer" }}>{t.confirm}</button>
           </div>
         </>}
+      </Modal>
+
+      {/* 删除确认弹窗 */}
+      <Modal show={!!confirmDeleteId} onClose={() => setConfirmDeleteId(null)} title={t.confirmDeleteTitle} c={c}>
+        <div style={{ fontSize:14, color:c.sub, marginBottom:24 }}>{t.confirmDeleteMsg}</div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+          <button onClick={() => setConfirmDeleteId(null)} style={{ padding:"12px", borderRadius:14, border:`1px solid ${c.line}`, background:"none", color:c.sub, fontSize:14, cursor:"pointer", fontWeight:600 }}>{t.cancel}</button>
+          <button onClick={() => { handleDeleteEntry(confirmDeleteId); setConfirmDeleteId(null); }} style={{ padding:"12px", borderRadius:14, border:"none", background: dark ? c.danger : "#8A4B34", color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer" }}>{t.delete}</button>
+        </div>
+      </Modal>
+
+      {/* 重制确认弹窗 */}
+      <Modal show={showResetConfirm} onClose={() => setShowResetConfirm(false)} title={t.confirmResetTitle} c={c}>
+        <div style={{ fontSize:14, color:c.sub, marginBottom:24 }}>{t.confirmResetMsg}</div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+          <button onClick={() => setShowResetConfirm(false)} style={{ padding:"12px", borderRadius:14, border:`1px solid ${c.line}`, background:"none", color:c.sub, fontSize:14, cursor:"pointer", fontWeight:600 }}>{t.cancel}</button>
+          <button onClick={() => { handleReset(); setShowResetConfirm(false); }} style={{ padding:"12px", borderRadius:14, border:"none", background: dark ? c.danger : "#8A4B34", color:"#fff", fontSize:14, fontWeight:800, cursor:"pointer" }}>{t.reset}</button>
+        </div>
       </Modal>
     </div>
   );
