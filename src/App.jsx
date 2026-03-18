@@ -28,19 +28,20 @@ const DARK = {
   green: '#3F7D5C', greenDark: '#2F6549', danger: '#dc2626',
 };
 
+// decimals: 0 = no decimal places (JPY, KRW, IDR, TWD), 2 = standard
 const CURRENCIES = [
-  { code: "MYR", flag: "🇲🇾", nameZh: "马币" },
-  { code: "THB", flag: "🇹🇭", nameZh: "泰铢" },
-  { code: "JPY", flag: "🇯🇵", nameZh: "日元" },
-  { code: "USD", flag: "🇺🇸", nameZh: "美元" },
-  { code: "EUR", flag: "🇪🇺", nameZh: "欧元" },
-  { code: "SGD", flag: "🇸🇬", nameZh: "新元" },
-  { code: "GBP", flag: "🇬🇧", nameZh: "英镑" },
-  { code: "AUD", flag: "🇦🇺", nameZh: "澳元" },
-  { code: "CNY", flag: "🇨🇳", nameZh: "人民币" },
-  { code: "KRW", flag: "🇰🇷", nameZh: "韩元" },
-  { code: "IDR", flag: "🇮🇩", nameZh: "印尼盾" },
-  { code: "TWD", flag: "🇹🇼", nameZh: "台币" },
+  { code: "AUD", flag: "🇦🇺", nameZh: "澳元",   decimals: 2 },
+  { code: "CNY", flag: "🇨🇳", nameZh: "人民币", decimals: 2 },
+  { code: "EUR", flag: "🇪🇺", nameZh: "欧元",   decimals: 2 },
+  { code: "GBP", flag: "🇬🇧", nameZh: "英镑",   decimals: 2 },
+  { code: "IDR", flag: "🇮🇩", nameZh: "印尼盾", decimals: 0 },
+  { code: "JPY", flag: "🇯🇵", nameZh: "日元",   decimals: 0 },
+  { code: "KRW", flag: "🇰🇷", nameZh: "韩元",   decimals: 0 },
+  { code: "MYR", flag: "🇲🇾", nameZh: "马币",   decimals: 2 },
+  { code: "SGD", flag: "🇸🇬", nameZh: "新元",   decimals: 2 },
+  { code: "THB", flag: "🇹🇭", nameZh: "泰铢",   decimals: 2 },
+  { code: "TWD", flag: "🇹🇼", nameZh: "台币",   decimals: 0 },
+  { code: "USD", flag: "🇺🇸", nameZh: "美元",   decimals: 2 },
 ];
 
 const T = {
@@ -89,6 +90,10 @@ const T = {
 };
 
 const fmt = (n, d = 2) => Number(n).toLocaleString("en-MY", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtCurr = (n, code) => {
+  const d = getCurr(code)?.decimals ?? 2;
+  return fmt(n, d);
+};
 const getCurr = (code) => CURRENCIES.find(c => c.code === code) || CURRENCIES[0];
 const fmtDate = (ts) => {
   const d = new Date(ts);
@@ -350,16 +355,16 @@ export default function App() {
               </div>
               <div style={{ marginBottom:4 }}>
                 <span style={{ fontSize:13, fontWeight:600, opacity:0.8, marginRight:6 }}>{wallet.foreignCurr}</span>
-                <span style={{ fontSize:38, fontWeight:900, letterSpacing:-1 }}>{fmt(wallet.remaining)}</span>
+                <span style={{ fontSize:38, fontWeight:900, letterSpacing:-1 }}>{fmtCurr(wallet.remaining, wallet.foreignCurr)}</span>
               </div>
-              <div style={{ fontSize:16, opacity:0.8, marginBottom:20 }}>≈ {wallet.myCurr} {fmt(wallet.remaining * wallet.rate)}</div>
+              <div style={{ fontSize:16, opacity:0.8, marginBottom:20 }}>≈ {wallet.myCurr} {fmtCurr(wallet.remaining * wallet.rate, wallet.myCurr)}</div>
               <div style={{ marginBottom:16 }}>
                 <div style={{ height:6, background:"rgba(255,255,255,0.2)", borderRadius:99, overflow:"hidden", marginBottom:8 }}>
                   <div style={{ height:"100%", width:`${spentPct*100}%`, background:"#fff", borderRadius:99, transition:"width 0.6s ease" }} />
                 </div>
                 <div style={{ display:"flex", justifyContent:"space-between", fontSize:12, opacity:0.8, fontWeight:700 }}>
-                  <div><div style={{ opacity:0.7, fontSize:10, textTransform:"uppercase", letterSpacing:0.5 }}>{t.spent}</div><div>{fmt(spent)} {wallet.foreignCurr}</div></div>
-                  <div style={{ textAlign:"right" }}><div style={{ opacity:0.7, fontSize:10, textTransform:"uppercase", letterSpacing:0.5 }}>{t.total}</div><div>{fmt(wallet.foreignAmt)} {wallet.foreignCurr}</div></div>
+                  <div><div style={{ opacity:0.7, fontSize:10, textTransform:"uppercase", letterSpacing:0.5 }}>{t.spent}</div><div>{fmtCurr(spent, wallet.foreignCurr)} {wallet.foreignCurr}</div></div>
+                  <div style={{ textAlign:"right" }}><div style={{ opacity:0.7, fontSize:10, textTransform:"uppercase", letterSpacing:0.5 }}>{t.total}</div><div>{fmtCurr(wallet.foreignAmt, wallet.foreignCurr)} {wallet.foreignCurr}</div></div>
                 </div>
               </div>
               <div style={{ paddingTop:14, borderTop:"1px solid rgba(255,255,255,0.2)", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -384,12 +389,12 @@ export default function App() {
                 </div>
                 <input type="number" step="0.01" value={expAmt} onChange={e => setExpAmt(e.target.value)} placeholder="0.00" style={{ ...inp, fontSize:20, fontWeight:700 }} />
                 {expAmt && parseFloat(expAmt) > 0 && (
-                  <div style={{ fontSize:12, color:c.green, marginTop:6, fontWeight:600 }}>≈ {wallet.myCurr} {fmt(parseFloat(expAmt)*wallet.rate)}</div>
+                  <div style={{ fontSize:12, color:c.green, marginTop:6, fontWeight:600 }}>≈ {wallet.myCurr} {fmtCurr(parseFloat(expAmt)*wallet.rate, wallet.myCurr)}</div>
                 )}
               </div>
               <div style={{ marginBottom:14 }}>
                 <label style={{ fontSize:11, fontWeight:700, color:c.sub, textTransform:"uppercase", letterSpacing:0.5, display:"block", marginBottom:6 }}>{t.note}</label>
-                <input type="text" value={expNote} onChange={e => setExpNote(e.target.value)} placeholder={lang === "zh" ? "例如：买芒果糯米饭" : "e.g. Mango sticky rice"} style={inp} />
+                <input type="text" value={expNote} onChange={e => setExpNote(e.target.value)} placeholder="" style={inp} />
               </div>
               <div style={{ marginBottom:16 }}>
                 <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:8 }}>
@@ -440,7 +445,7 @@ export default function App() {
                         </span>
                         {daySpent > 0 && (
                           <span style={{ fontSize:12, fontWeight:800, color:c.danger }}>
-                            {t.dailyTotal}: -{fmt(daySpent)} {wallet.foreignCurr}
+                            {t.dailyTotal}: -{fmtCurr(daySpent, wallet.foreignCurr)} {wallet.foreignCurr}
                           </span>
                         )}
                       </div>
@@ -452,15 +457,15 @@ export default function App() {
                           </div>
                           <div style={{ flex:1, minWidth:0 }}>
                             <div style={{ fontSize:14, fontWeight:700, color:c.text, whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
-                              {e.type==="topup" ? `${t.topUpLabel}: ${e.myCurr} ${fmt(e.addMy)}` : e.note}
+                              {e.type==="topup" ? `${t.topUpLabel}: ${e.myCurr} ${fmtCurr(e.addMy, e.myCurr)}` : e.note}
                             </div>
                             <div style={{ fontSize:11, color:c.sub, marginTop:2 }}>
-                              {e.type==="expense" && <span>≈ {e.myCurr} {fmt(e.my)}</span>}
+                              {e.type==="expense" && <span>≈ {e.myCurr} {fmtCurr(e.my, e.myCurr)}</span>}
                             </div>
                           </div>
                           <div style={{ textAlign:"right", flexShrink:0 }}>
                             <div style={{ fontWeight:800, fontSize:14, color: e.type==="topup" ? c.green : c.danger }}>
-                              {e.type==="topup" ? "+" : "-"}{fmt(e.type==="topup" ? e.addForeign : e.foreign)}
+                              {e.type==="topup" ? "+" : "-"}{fmtCurr(e.type==="topup" ? e.addForeign : e.foreign, e.foreignCurr)}
                             </div>
                             <div style={{ fontSize:10, fontWeight:700, color:c.sub, textTransform:"uppercase" }}>{e.foreignCurr}</div>
                           </div>
